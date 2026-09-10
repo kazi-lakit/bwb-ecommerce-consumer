@@ -1,0 +1,38 @@
+{
+  "name": "ecommerce-consumer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:https": "vite --host",
+    "cert": "node scripts/generate-cert.mjs",
+    "build": "tsc -b && vite build",
+    "build:dev": "BUILD_ENV=dev npm run set-env && tsc -b && vite build",
+    "build:stg": "BUILD_ENV=stg npm run set-env && tsc -b && vite build",
+    "build:prod": "BUILD_ENV=prod npm run set-env && tsc -b && vite build",
+    "set-env": "node set-env.cjs",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@seliseblocks/client": "^0.1.6",
+    "@tanstack/react-query": "^5.101.4",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.29.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "^7.12.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "@vitejs/plugin-react": "^5.1.1",
+    "selfsigned": "^5.5.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

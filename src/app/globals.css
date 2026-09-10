@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens follow the "Caraway" design system (warm-cream canvas, ink-navy
+ * accent, humanist-grotesque type, 4px-radius buttons, tonal-stepping instead of
+ * shadows — see the DESIGN.md this was built from). Token *names* are unchanged from
+ * before so every component keeps working; only the values were re-skinned.
+ *
+ * Theme is controlled by `data-theme="light"|"dark"` on <html>, set before paint by
+ * the inline script in index.html (reads localStorage, falls back to the OS
+ * preference) and toggled at runtime by ThemeProvider — see
+ * src/components/providers/theme-provider.tsx. Caraway itself is a single warm-light
+ * palette; "dark" here is a reasoned inversion (canvas <-> surface-dark) so the
+ * existing toggle keeps working rather than being ripped out.
+ */
+:root {
+  color-scheme: light;
+
+  --color-primary: #0e1c2c;
+  --color-on-primary: #f5efe4;
+  --color-brand-accent: #0e1c2c;
+  --color-brand-accent-deep: #000814;
+  --color-brand-accent-soft: #e8dec9;
+  --color-brand-warn: #c8892f;
+  --color-brand-error: #b3452c;
+  --color-brand-success: #5c7a4c;
+  --color-status-positive-text: #46612f;
+  --color-status-warning-text: #93601f;
+  --color-canvas: #f5efe4;
+  --color-admin-canvas: #efe6d6;
+  --color-surface: #faf5ec;
+  --color-surface-soft: #efe6d6;
+  --color-surface-strong: #e8dec9;
+  --color-hairline: #e3d9c8;
+  --color-hairline-soft: #efe6d6;
+  --color-border-strong: #c8bca8;
+  --color-ink: #0e1c2c;
+  --color-charcoal: #2c3140;
+  --color-slate: #6e7280;
+  --color-steel: #5a5046;
+  --color-stone: #8a8074;
+  --color-muted: #8a8074;
+  --color-on-dark: #f5efe4;
+  /* Fixed dark band — the announcement bar and footer stay this tone regardless of the
+     light/dark toggle, matching the design system's single dark surface. */
+  --color-surface-dark: #1c2536;
+  --color-scrim: rgb(28 37 54 / 70%);
+  --color-overlay: rgb(28 37 54 / 40%);
+
+  /* Signature product colorways — decorative brand accents, not tied to real SKU data. */
+  --color-cream: #ece2cf;
+  --color-sage: #a8b59a;
+  --color-navy: #2a3a52;
+  --color-perracotta: #d49a8b;
+  --color-marigold: #e9b461;
+  --color-swatch-gray: #a09a91;
+
+  /* Spec: "essentially no shadow tier" — tonal stepping does the work instead. This
+     is only ever used as a faint hover lift, never a resting elevation. */
+  --shadow-card: 0 4px 12px rgba(14, 28, 44, 0.04);
+  --shadow-float: 0 2px 6px rgba(14, 28, 44, 0.06);
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #f5efe4;
+  --color-on-primary: #14202e;
+  --color-charcoal: #e7e2d8;
+
+  --color-brand-accent: #f5efe4;
+  --color-brand-accent-deep: #ffffff;
+  --color-brand-accent-soft: #2a3547;
+  --color-brand-warn: #e0a839;
+  --color-brand-error: #e4998a;
+  --color-brand-success: #9ab98a;
+  --color-status-positive-text: #b6d6a6;
+  --color-status-warning-text: #f0c072;
+
+  --color-canvas: #1c2536;
+  --color-admin-canvas: #171f2d;
+  --color-surface: #232d40;
+  --color-surface-soft: #202939;
+  --color-surface-strong: #2a3547;
+
+  --color-hairline: #303c50;
+  --color-hairline-soft: #283246;
+  --color-border-strong: #3c4a60;
+
+  --color-ink: #f5efe4;
+  --color-slate: #b7bccb;
+  --color-steel: #c9c2b4;
+  --color-stone: #8a8f9e;
+  --color-muted: #9a9284;
+
+  --color-on-dark: #f5efe4;
+  --color-surface-dark: #0f1420;
+  --color-scrim: rgb(8 12 20 / 70%);
+
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-brand-accent: var(--color-brand-accent);
+  --color-brand-accent-deep: var(--color-brand-accent-deep);
+  --color-brand-accent-soft: var(--color-brand-accent-soft);
+  --color-brand-warn: var(--color-brand-warn);
+  --color-brand-error: var(--color-brand-error);
+  --color-brand-success: var(--color-brand-success);
+  --color-status-positive-text: var(--color-status-positive-text);
+  --color-status-warning-text: var(--color-status-warning-text);
+  --color-canvas: var(--color-canvas);
+  --color-admin-canvas: var(--color-admin-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-soft: var(--color-surface-soft);
+  --color-surface-strong: var(--color-surface-strong);
+  --color-hairline: var(--color-hairline);
+  --color-hairline-soft: var(--color-hairline-soft);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink: var(--color-ink);
+  --color-charcoal: var(--color-charcoal);
+  --color-slate: var(--color-slate);
+  --color-steel: var(--color-steel);
+  --color-stone: var(--color-stone);
+  --color-muted: var(--color-muted);
+  --color-on-dark: var(--color-on-dark);
+  --color-surface-dark: var(--color-surface-dark);
+  --color-scrim: var(--color-scrim);
+  --color-overlay: var(--color-overlay);
+
+  --color-cream: var(--color-cream);
+  --color-sage: var(--color-sage);
+  --color-navy: var(--color-navy);
+  --color-perracotta: var(--color-perracotta);
+  --color-marigold: var(--color-marigold);
+  --color-swatch-gray: var(--color-swatch-gray);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: "Inter", "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Display headings run tighter, negative-tracking type — Caraway's one deliberate
+   typographic flourish (see typography.display-* in the design tokens). */
+.font-display {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.admin-card {
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--color-canvas);
+  box-shadow: var(--shadow-card);
+}
+
+::selection {
+  background: var(--color-brand-accent-soft);
+  color: var(--color-primary);
+}
+
+* {
+  scrollbar-color: var(--color-muted) transparent;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a,
+summary {
+  cursor: pointer;
+}
