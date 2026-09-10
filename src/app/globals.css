@@ -1,69 +1,73 @@
 @import "tailwindcss";
 
 /*
- * Design tokens follow the "Caraway" design system (warm-cream canvas, ink-navy
- * accent, humanist-grotesque type, 4px-radius buttons, tonal-stepping instead of
- * shadows — see the DESIGN.md this was built from). Token *names* are unchanged from
- * before so every component keeps working; only the values were re-skinned.
+ * Design tokens follow the "Northtrail Adventure" reference
+ * (https://northtrail-adventure-59.aura.build/) — warm cream canvas (#f5f1e8),
+ * near-black "stone" ink/text, a single burnt-orange accent (#ea580c) on fully-rounded
+ * pill CTAs (lightening on hover, not darkening), and a near-black footer/announcement
+ * band (#0c0a09). Values were read directly from that site's rendered DOM. Token
+ * *names* are unchanged from before so every component keeps working; only the values
+ * (and a couple of radii) were re-skinned.
  *
  * Theme is controlled by `data-theme="light"|"dark"` on <html>, set before paint by
- * the inline script in index.html (reads localStorage, falls back to the OS
- * preference) and toggled at runtime by ThemeProvider — see
- * src/components/providers/theme-provider.tsx. Caraway itself is a single warm-light
- * palette; "dark" here is a reasoned inversion (canvas <-> surface-dark) so the
- * existing toggle keeps working rather than being ripped out.
+ * the inline script in index.html (reads localStorage, defaults to "light") and
+ * toggled at runtime by ThemeProvider — see
+ * src/components/providers/theme-provider.tsx. The reference itself is a single
+ * warm-light palette; "dark" here is a reasoned inversion (canvas <-> near-black) so
+ * the existing toggle keeps working rather than being ripped out.
  */
 :root {
   color-scheme: light;
 
-  --color-primary: #0e1c2c;
-  --color-on-primary: #f5efe4;
-  --color-brand-accent: #0e1c2c;
-  --color-brand-accent-deep: #000814;
-  --color-brand-accent-soft: #e8dec9;
-  --color-brand-warn: #c8892f;
-  --color-brand-error: #b3452c;
-  --color-brand-success: #5c7a4c;
-  --color-status-positive-text: #46612f;
-  --color-status-warning-text: #93601f;
-  --color-canvas: #f5efe4;
-  --color-admin-canvas: #efe6d6;
-  --color-surface: #faf5ec;
-  --color-surface-soft: #efe6d6;
-  --color-surface-strong: #e8dec9;
-  --color-hairline: #e3d9c8;
-  --color-hairline-soft: #efe6d6;
-  --color-border-strong: #c8bca8;
-  --color-ink: #0e1c2c;
-  --color-charcoal: #2c3140;
-  --color-slate: #6e7280;
-  --color-steel: #5a5046;
-  --color-stone: #8a8074;
-  --color-muted: #8a8074;
-  --color-on-dark: #f5efe4;
+  --color-primary: #ea580c;
+  --color-on-primary: #ffffff;
+  --color-brand-accent: #ea580c;
+  /* The reference lightens on hover (bg-orange-600 -> hover:bg-orange-500), not
+     darkens — this token is used as the hover/press fill everywhere accent is. */
+  --color-brand-accent-deep: #f97316;
+  --color-brand-accent-soft: #fff7ed;
+  --color-brand-warn: #b45309;
+  --color-brand-error: #dc2626;
+  --color-brand-success: #047857;
+  --color-status-positive-text: #047857;
+  --color-status-warning-text: #b45309;
+  --color-canvas: #f5f1e8;
+  --color-admin-canvas: #f5f5f4;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f5f5f4;
+  --color-surface-strong: #e7e5e4;
+  --color-hairline: #e7e5e4;
+  --color-hairline-soft: #f5f5f4;
+  --color-border-strong: #d6d3d1;
+  --color-ink: #1c1917;
+  --color-charcoal: #292524;
+  --color-slate: #78716c;
+  --color-steel: #57534e;
+  --color-stone: #78716c;
+  --color-muted: #78716c;
+  --color-on-dark: #ffffff;
   /* Fixed dark band — the announcement bar and footer stay this tone regardless of the
-     light/dark toggle, matching the design system's single dark surface. */
-  --color-surface-dark: #1c2536;
-  --color-scrim: rgb(28 37 54 / 70%);
-  --color-overlay: rgb(28 37 54 / 40%);
+     light/dark toggle, matching the reference's own near-black footer/section. */
+  --color-surface-dark: #0c0a09;
+  --color-scrim: rgb(12 10 9 / 70%);
+  --color-overlay: rgb(12 10 9 / 40%);
 
-  /* Signature product colorways — decorative brand accents, not tied to real SKU data. */
-  --color-cream: #ece2cf;
-  --color-sage: #a8b59a;
-  --color-navy: #2a3a52;
-  --color-perracotta: #d49a8b;
-  --color-marigold: #e9b461;
-  --color-swatch-gray: #a09a91;
+  /* Product colorway swatches — decorative, not tied to real SKU data. Sampled from
+     the reference's own variant-swatch dots (emerald/lime/amber/rust). */
+  --color-cream: #e7e5e4;
+  --color-sage: #4d7c0f;
+  --color-navy: #064e3b;
+  --color-perracotta: #b45309;
+  --color-marigold: #f59e0b;
+  --color-swatch-gray: #78716c;
 
-  /* Spec: "essentially no shadow tier" — tonal stepping does the work instead. This
-     is only ever used as a faint hover lift, never a resting elevation. */
-  --shadow-card: 0 4px 12px rgba(14, 28, 44, 0.04);
-  --shadow-float: 0 2px 6px rgba(14, 28, 44, 0.06);
+  --shadow-card: 0 4px 12px rgba(28, 25, 23, 0.06);
+  --shadow-float: 0 8px 20px rgba(234, 88, 12, 0.18);
 
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-xs: 6px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-full: 9999px;
 }
@@ -71,41 +75,41 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --color-primary: #f5efe4;
-  --color-on-primary: #14202e;
-  --color-charcoal: #e7e2d8;
+  --color-primary: #f97316;
+  --color-on-primary: #ffffff;
+  --color-charcoal: #e7e5e4;
 
-  --color-brand-accent: #f5efe4;
-  --color-brand-accent-deep: #ffffff;
-  --color-brand-accent-soft: #2a3547;
+  --color-brand-accent: #f97316;
+  --color-brand-accent-deep: #fb923c;
+  --color-brand-accent-soft: #431407;
   --color-brand-warn: #e0a839;
-  --color-brand-error: #e4998a;
-  --color-brand-success: #9ab98a;
-  --color-status-positive-text: #b6d6a6;
+  --color-brand-error: #f87171;
+  --color-brand-success: #34d399;
+  --color-status-positive-text: #6ee7b7;
   --color-status-warning-text: #f0c072;
 
-  --color-canvas: #1c2536;
-  --color-admin-canvas: #171f2d;
-  --color-surface: #232d40;
-  --color-surface-soft: #202939;
-  --color-surface-strong: #2a3547;
+  --color-canvas: #1c1917;
+  --color-admin-canvas: #161412;
+  --color-surface: #292524;
+  --color-surface-soft: #211e1c;
+  --color-surface-strong: #3f3a37;
 
-  --color-hairline: #303c50;
-  --color-hairline-soft: #283246;
-  --color-border-strong: #3c4a60;
+  --color-hairline: #44403c;
+  --color-hairline-soft: #35302c;
+  --color-border-strong: #57534e;
 
-  --color-ink: #f5efe4;
-  --color-slate: #b7bccb;
-  --color-steel: #c9c2b4;
-  --color-stone: #8a8f9e;
-  --color-muted: #9a9284;
+  --color-ink: #f5f1e8;
+  --color-slate: #a8a29e;
+  --color-steel: #d6d3d1;
+  --color-stone: #a8a29e;
+  --color-muted: #a8a29e;
 
-  --color-on-dark: #f5efe4;
-  --color-surface-dark: #0f1420;
-  --color-scrim: rgb(8 12 20 / 70%);
+  --color-on-dark: #ffffff;
+  --color-surface-dark: #000000;
+  --color-scrim: rgb(0 0 0 / 70%);
 
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.28);
-  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.24);
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 8px 20px rgba(249, 115, 22, 0.22);
 }
 
 @theme inline {
@@ -168,8 +172,7 @@ body {
   min-height: 100vh;
 }
 
-/* Display headings run tighter, negative-tracking type — Caraway's one deliberate
-   typographic flourish (see typography.display-* in the design tokens). */
+/* Display headings run tighter, negative-tracking type. */
 .font-display {
   font-weight: 500;
   letter-spacing: -0.02em;
