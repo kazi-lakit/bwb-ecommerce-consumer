@@ -12,17 +12,19 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-// Reads from the same source as the inline script in app/layout.tsx, so this lazy
+// Reads from the same source as the inline script in index.html, so this lazy
 // initializer and the pre-paint DOM state always agree (no hydration mismatch).
+// Defaults to "light" regardless of OS preference — the warm-cream palette is the
+// site's designed look, so every new visitor sees it unless they've explicitly toggled.
 function readInitialTheme(): Theme {
   if (typeof window === "undefined") return "light";
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "dark" || stored === "light") return stored;
   } catch {
-    // Private browsing / storage disabled — fall through to the OS preference.
+    // Private browsing / storage disabled — fall through to the default.
   }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

@@ -8,6 +8,7 @@ import { useCart } from "@/components/providers/cart-provider";
 import { useWishlist } from "@/components/providers/wishlist-provider";
 import { startLogin } from "@/lib/blocks/auth";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const FALLBACK_CATEGORIES = ["Chair", "Table", "Sofa", "Dining", "Bed", "Interior"];
 
@@ -90,6 +91,7 @@ export function StorefrontHeader() {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
             <button
               type="button"
               className="flex h-9 w-9 items-center justify-center text-ink hover:text-steel"

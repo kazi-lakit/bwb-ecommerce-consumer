@@ -10,16 +10,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary: "rounded-sm bg-brand-accent text-on-primary hover:bg-brand-accent-deep disabled:bg-hairline disabled:text-muted",
-  accent: "rounded-sm bg-brand-accent text-on-primary hover:bg-brand-accent-deep",
-  secondary: "rounded-sm border border-border-strong bg-transparent text-ink hover:bg-surface-soft",
-  ghost: "rounded-sm bg-transparent text-ink hover:underline",
-  danger: "rounded-sm border border-brand-error/30 bg-brand-error/10 text-brand-error hover:bg-brand-error/15",
+  primary:
+    "rounded-full bg-brand-accent text-on-primary shadow-[0_8px_20px_rgba(234,88,12,0.3)] hover:bg-brand-accent-deep hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-hairline disabled:text-muted disabled:shadow-none",
+  accent:
+    "rounded-full bg-brand-accent text-on-primary shadow-[0_8px_20px_rgba(234,88,12,0.3)] hover:bg-brand-accent-deep hover:-translate-y-0.5",
+  secondary: "rounded-full border border-border-strong bg-transparent text-ink hover:bg-surface-soft",
+  ghost: "rounded-full bg-transparent text-ink hover:underline",
+  danger: "rounded-full border border-brand-error/30 bg-brand-error/10 text-brand-error hover:bg-brand-error/15",
 };
 
 const sizeClasses: Record<Size, string> = {
-  md: "min-h-12 px-7 py-3.5 text-xs uppercase tracking-[0.06em]",
-  sm: "min-h-9 px-4 py-1.5 text-[11px] uppercase tracking-[0.06em]",
+  md: "min-h-12 px-7 py-3.5 text-sm",
+  sm: "min-h-9 px-4 py-1.5 text-xs",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -27,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 font-medium leading-tight transition-colors duration-150 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 font-semibold leading-tight transition-all duration-300 disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],
         className
