@@ -19,23 +19,30 @@ required. `src/lib/blocks/schema-meta.ts` is generated the same way as in
 `ecommerce-back-office` (`node scripts/gen-schema-meta.mjs`, sourced from
 `../ECOMMERCE_INVENTORY_SCHEMAS.json`) — do not hand-edit it.
 
-**Cart, Wishlist, and Coupon have no Blocks schema yet.** They're implemented
-client-side only:
+**Cart, Order, and CommerceCustomer have real code against a drafted (not yet imported)
+schema — see `COMMERCE_SCHEMAS_DRAFT.json`/`.md` and `P0_POLICY_FIXES.json`/`.md` at the
+workspace root.** Everything below is gated behind `VITE_COMMERCE_SCHEMAS_LIVE`
+(`import.meta.env`, checked via the shared `COMMERCE_SCHEMAS_LIVE` constant in
+`src/lib/blocks/commerce.ts`), **off by default** — until that draft is imported and the flag
+is set to `"true"` in `.env.local`/`.env.dev`, every one of these still behaves exactly as
+described in the "off" column below:
 
-- `src/components/providers/cart-provider.tsx` — cart persisted to `localStorage`
-  (guest-only, per-browser, not per-customer).
-- `src/components/providers/wishlist-provider.tsx` — same pattern for wishlisted
-  product ids.
+| Concern | Off (today's default) | On (after import) |
+|---|---|---|
+| Cart | `localStorage` only, guest-only, per-browser | Still `localStorage`-backed (instant load, guest-friendly), **additionally** synced to a server `Cart` record for signed-in customers — fetched-and-merged once per session, kept in sync via debounced create/update. See `cart-provider.tsx` + `commerce.ts`'s `getActiveCart`/`createRemoteCart`/`updateRemoteCart`. |
+| Checkout order placement | Simulated (`setTimeout`, no persisted record) | Real `insertOrder` mutation with price/tax/discount snapshots and a retry-safe idempotency key. See `CheckoutPage.tsx`'s `placeOrder()` + `commerce.ts`'s `placeOrder()`. |
+| Commerce profile | None | Auto-created/read on first login (`CommerceCustomerProvider`, wraps the app in `providers.tsx`); used to prefill and optionally save the checkout address (`commerce.ts`'s `ensureCommerceCustomer`/`addCustomerAddress`). |
+
+**Wishlist and coupons are still client-side only, unchanged:**
+- `src/components/providers/wishlist-provider.tsx` — `localStorage`, guest-only.
 - `src/lib/coupons.ts` — a small hardcoded demo coupon list (`SAVE10`, `FLAT50`).
 
-Each file says in a comment what to swap in once a real schema exists
-(`useEntityList`/`useEntityMutations` against `Cart`/`Wishlist`/`Coupon` — the same
-generic hooks `Product`/`Category`/`Brand` already use). Checkout does not persist an
-`Order` record either — `CheckoutPage.tsx`'s `placeOrder()` simulates placement and
-routes to `/order-confirmation`; wire a real `Order` schema + mutation there once one
-exists. Checkout still requires the customer to be logged in (via the same Blocks
-OIDC flow), since an eventual `Order`/`Cart` schema will need an owner to scope
-row-level access to.
+All of the Commerce-schema code above is self-contained hand-written GraphQL in
+`src/lib/blocks/commerce.ts` — deliberately **not** using `createEntityApi`/`schema-meta.ts`
+(those don't know about `Cart`/`Order`/`CommerceCustomer` until the export JSON is updated and
+regenerated, which should only happen *after* the schemas are actually live — see
+`COMMERCE_SCHEMAS_DRAFT.md` for why). This means the code works immediately once the schema is
+imported and reloaded, with no separate regeneration step required for these three flows.
 
 ## Routes
 

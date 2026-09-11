@@ -13,6 +13,7 @@ import { CheckboxFilterGroup, type FilterOption } from "@/components/storefront/
 import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { getProductPrice, getColorSwatchValues } from "@/lib/product-pricing";
+import { useVariantAvailability } from "@/lib/blocks/inventory";
 
 interface AttributeItem {
   Code?: string;
@@ -59,6 +60,7 @@ export default function ProductListingPage() {
   const [size, setSize] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sort, setSort] = useState<SortOption>("newest");
+  const [inStockOnly, setInStockOnly] = useState(false);
 
   const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });
   const category = (categories.data?.items ?? []).find((c) => itemId(c) === categoryId);
@@ -84,6 +86,23 @@ export default function ProductListingPage() {
   }, [variants.data]);
 
   const allProducts = products.data?.items ?? [];
+
+  // Real stock check against WarehouseInventory (see lib/blocks/inventory.ts) — bounded to
+  // this page's own variants, not the whole catalog, since the gateway can't aggregate this
+  // server-side. `maxRows` raised past the hook's default since a listing page can easily
+  // have more variant/warehouse combinations than a single product's detail page does.
+  const allVariantIds = useMemo(() => (variants.data?.items ?? []).map(itemId), [variants.data]);
+  const { availability: variantAvailability } = useVariantAvailability(allVariantIds, 500);
+
+  function productInStock(product: EntityRecord): boolean {
+    if (product.IsInventoryTracked === false) return true;
+    const productVariants = variantsByProduct.get(itemId(product)) ?? [];
+    if (productVariants.length === 0) return true; // no variants to check yet — don't hide it
+    return productVariants.some((variant) => {
+      if (variant.IsInventoryTracked === false || variant.AllowBackorder === true) return true;
+      return (variantAvailability.get(itemId(variant))?.totalAvailable ?? 0) > 0;
+    });
+  }
 
   const priceByProduct = useMemo(() => {
     const map = new Map<string, number>();
@@ -115,6 +134,7 @@ export default function ProductListingPage() {
       if (!productHasAttributeValue(product, /structure.?colou?r/i, structureColor)) return false;
       if (!productHasAttributeValue(product, /^material$/i, material)) return false;
       if (!productHasAttributeValue(product, /^size$/i, size)) return false;
+      if (inStockOnly && !productInStock(product)) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -123,7 +143,19 @@ export default function ProductListingPage() {
       return String(b.CreatedDate ?? "").localeCompare(String(a.CreatedDate ?? ""));
     });
     return list;
-  }, [allProducts, priceByProduct, effectiveRange, fabricColor, structureColor, material, size, sort]);
+  }, [
+    allProducts,
+    priceByProduct,
+    effectiveRange,
+    fabricColor,
+    structureColor,
+    material,
+    size,
+    sort,
+    inStockOnly,
+    variantsByProduct,
+    variantAvailability,
+  ]);
 
   const placeholders = useMemo(() => assignPlaceholders(filtered, theme), [filtered, theme]);
   const loading = products.isLoading || variants.isLoading;
@@ -135,10 +167,16 @@ export default function ProductListingPage() {
     setMaterial([]);
     setSize([]);
     setPriceRange(null);
+    setInStockOnly(false);
   }
 
   const hasFilters =
-    fabricColor.length > 0 || structureColor.length > 0 || material.length > 0 || size.length > 0 || priceRange !== null;
+    fabricColor.length > 0 ||
+    structureColor.length > 0 ||
+    material.length > 0 ||
+    size.length > 0 ||
+    priceRange !== null ||
+    inStockOnly;
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -168,6 +206,15 @@ export default function ProductListingPage() {
                 <PriceRangeSlider min={priceBounds[0]} max={priceBounds[1]} value={effectiveRange} onChange={setPriceRange} />
               </div>
             </div>
+            <label className="flex items-center gap-2 border-b border-hairline-soft py-4 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={inStockOnly}
+                onChange={(e) => setInStockOnly(e.target.checked)}
+                className="accent-[var(--color-brand-accent)]"
+              />
+              In stock only
+            </label>
             <CheckboxFilterGroup title="Fabric Color" options={fabricOptions} selected={fabricColor} onChange={setFabricColor} />
             <CheckboxFilterGroup title="Structure Color" options={structureOptions} selected={structureColor} onChange={setStructureColor} />
             <CheckboxFilterGroup title="Material" options={materialOptions} selected={material} onChange={setMaterial} />

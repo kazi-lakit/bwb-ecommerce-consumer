@@ -18,10 +18,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Gates every product/inventory screen behind a validated IAM session — see
- * `ProtectedLayout` in App.tsx. Without a valid session cookie `bootstrap` throws and
- * `status` stays "unauthenticated", so no product data is ever fetched or rendered for
- * a signed-out visitor, matching the schemas' non-public ReadAccessLevel.
+ * Validates the cookie-backed IAM session and exposes the result via `status`/`user`.
+ * Unlike `ecommerce-back-office`, this app has no `ProtectedLayout` — every route in
+ * `App.tsx` renders unconditionally, since Product/Category/Brand/ProductVariant reads
+ * are Public on the Data Gateway and the storefront is meant to browse with no session
+ * (see this repo's AGENTS.md). `useAuth()` is consulted in exactly one place,
+ * `CheckoutPage.tsx`, to require sign-in before checkout — not as a route guard.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");

@@ -4,9 +4,9 @@ import { dirname, resolve } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Regenerates src/lib/blocks/schema-meta.ts from the sibling repo's schema export.
+// Regenerates src/lib/blocks/schema-meta.ts from the sibling docs repo's schema export.
 // Usage: node scripts/gen-schema-meta.mjs [sourceJsonPath] [outTsPath]
-const SRC = process.argv[2] || resolve(__dirname, "../../ECOMMERCE_INVENTORY_SCHEMAS.json");
+const SRC = process.argv[2] || resolve(__dirname, "../../bwb-ecommerce-docs/ECOMMERCE_INVENTORY_SCHEMAS.json");
 const OUT = process.argv[3] || resolve(__dirname, "../src/lib/blocks/schema-meta.ts");
 
 const SYSTEM_FIELDS = new Set([

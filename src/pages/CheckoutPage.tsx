@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import clsx from "clsx";
 import { useCart } from "@/components/providers/cart-provider";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useCommerceCustomer } from "@/components/providers/commerce-customer-provider";
 import { startLogin } from "@/lib/blocks/auth";
 import { toast } from "@/lib/toast-store";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -14,6 +15,7 @@ import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { formatMoney } from "@/lib/product-pricing";
 import { validateCoupon, type CouponResult } from "@/lib/coupons";
+import { COMMERCE_SCHEMAS_LIVE, generateIdempotencyKey, placeOrder as placeOrderRemote } from "@/lib/blocks/commerce";
 
 const DELIVERY_CHARGE = 120;
 
@@ -46,6 +48,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { status, user } = useAuth();
   const { items, subtotal, clear } = useCart();
+  const { customer, saveAddress } = useCommerceCustomer();
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
@@ -54,12 +57,17 @@ export default function CheckoutPage() {
   const [addressLine, setAddressLine] = useState("");
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [saveThisAddress, setSaveThisAddress] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryOption, setDeliveryOption] = useState<"doorstep" | "pickup">("doorstep");
   const [agreed, setAgreed] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponResult | null>(null);
   const [placing, setPlacing] = useState(false);
+  // Generated once per mount and reused across retries of the same checkout attempt, so a
+  // resubmit after a failed/slow request can't place the order twice once IdempotencyKey
+  // is backed by a real unique index (see commerce.ts).
+  const idempotencyKeyRef = useRef(generateIdempotencyKey());
 
   useEffect(() => {
     if (user) {
@@ -69,6 +77,17 @@ export default function CheckoutPage() {
       setPhone((v) => v || user.phoneNumber || "");
     }
   }, [user]);
+
+  // Prefill from the most recently saved address on the commerce profile, if any — never
+  // overwrites something the customer already typed. `customer` stays null (no-op) until
+  // the Commerce schemas are live and this profile has loaded.
+  useEffect(() => {
+    const saved = customer?.addresses.at(-1);
+    if (!saved) return;
+    setAddressLine((v) => v || saved.Line1 || "");
+    setCity((v) => v || saved.City || "");
+    setPostalCode((v) => v || saved.PostalCode || "");
+  }, [customer]);
 
   const currency = items[0]?.currency ?? "USD";
   const discount = coupon?.valid ? coupon.discountAmount : 0;
@@ -123,7 +142,7 @@ export default function CheckoutPage() {
     setCoupon(validateCoupon(couponInput, subtotal));
   }
 
-  function placeOrder() {
+  async function placeOrder() {
     if (!agreed) {
       toast.error("Please agree to the terms & conditions to continue.");
       return;
@@ -133,14 +152,44 @@ export default function CheckoutPage() {
       return;
     }
     setPlacing(true);
-    // No Order schema on the Data Gateway yet — this simulates placement. Swap for a
-    // real `useEntityMutations("Order").create(...)` call once that schema exists.
-    setTimeout(() => {
-      clear();
-      navigate("/order-confirmation", {
-        state: { orderNumber: `ORD-${Date.now().toString().slice(-8)}`, total, currency, deliveryOption },
+
+    if (!COMMERCE_SCHEMAS_LIVE) {
+      // Order schema not imported yet (see COMMERCE_SCHEMAS_DRAFT.md) — simulates
+      // placement so the flow can still be demoed/tested end to end.
+      setTimeout(() => {
+        clear();
+        navigate("/order-confirmation", {
+          state: { orderNumber: `ORD-${Date.now().toString().slice(-8)}`, total, currency, deliveryOption },
+        });
+      }, 500);
+      return;
+    }
+
+    try {
+      const { itemId, orderNumber } = await placeOrderRemote({
+        customerId: user!.itemId,
+        items,
+        currency,
+        subTotal: subtotal,
+        discountTotal: discount,
+        shippingTotal: deliveryCharge,
+        grandTotal: total,
+        couponCode: coupon?.valid ? couponInput.trim() : undefined,
+        shippingAddress: { Line1: addressLine.trim(), City: city.trim(), PostalCode: postalCode.trim() },
+        idempotencyKey: idempotencyKeyRef.current,
       });
-    }, 500);
+      if (saveThisAddress) {
+        // Best-effort — the order already placed successfully; don't fail checkout over
+        // a profile-convenience write.
+        void saveAddress({ Line1: addressLine.trim(), City: city.trim(), PostalCode: postalCode.trim() });
+      }
+      clear();
+      navigate("/order-confirmation", { state: { orderNumber, itemId, total, currency, deliveryOption } });
+    } catch {
+      // blocksDataCall already surfaced a toast for the specific error; keep the cart and
+      // idempotency key intact so the customer can just retry.
+      setPlacing(false);
+    }
   }
 
   return (
@@ -172,6 +221,17 @@ export default function CheckoutPage() {
                 <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
                 <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Postal code" />
               </div>
+              {customer && (
+                <label className="mt-3 flex items-center gap-2 text-xs text-steel">
+                  <input
+                    type="checkbox"
+                    checked={saveThisAddress}
+                    onChange={(e) => setSaveThisAddress(e.target.checked)}
+                    className="accent-[var(--color-brand-accent)]"
+                  />
+                  Save this address to my account
+                </label>
+              )}
             </AccordionSection>
 
             <AccordionSection title="Select Payment Method">

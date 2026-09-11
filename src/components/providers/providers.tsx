@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./auth-provider";
 import { ThemeProvider } from "./theme-provider";
+import { CommerceCustomerProvider } from "./commerce-customer-provider";
 import { CartProvider } from "./cart-provider";
 import { WishlistProvider } from "./wishlist-provider";
 
@@ -14,9 +15,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <QueryClientProvider client={client}>
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>{children}</WishlistProvider>
-          </CartProvider>
+          <CommerceCustomerProvider>
+            <CartProvider>
+              <WishlistProvider>{children}</WishlistProvider>
+            </CartProvider>
+          </CommerceCustomerProvider>
         </AuthProvider>
         <Toaster />
       </QueryClientProvider>

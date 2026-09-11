@@ -7,6 +7,8 @@ import { formatMoney } from "@/lib/product-pricing";
 
 interface ConfirmationState {
   orderNumber: string;
+  /** The real Order record's ItemId — only present once orders are placed for real (see CheckoutPage's COMMERCE_SCHEMAS_LIVE flag). */
+  itemId?: string;
   total: number;
   currency: string;
   deliveryOption: "doorstep" | "pickup";

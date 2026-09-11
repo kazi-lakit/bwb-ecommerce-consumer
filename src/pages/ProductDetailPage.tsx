@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useEntityList } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { getPrimaryImage } from "@/lib/blocks/media";
+import { useSingleVariantAvailability } from "@/lib/blocks/inventory";
 import { assignPlaceholders } from "@/lib/placeholder-images";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useCart } from "@/components/providers/cart-provider";
@@ -93,6 +94,15 @@ export default function ProductDetailPage() {
   const selectedVariant = variants.find((v) => itemId(v) === selectedVariantId) ?? defaultVariant;
   const price = getVariantPrice(selectedVariant);
 
+  // Real stock check against WarehouseInventory — see lib/blocks/inventory.ts. A
+  // product/variant can opt out of tracking (IsInventoryTracked=false) or allow selling past
+  // zero (AllowBackorder=true); either one means "never block on availability".
+  const inventoryTracked = (selectedVariant?.IsInventoryTracked as boolean | undefined) ?? (product?.IsInventoryTracked as boolean | undefined) ?? true;
+  const allowBackorder = (selectedVariant?.AllowBackorder as boolean | undefined) ?? (product?.AllowBackorder as boolean | undefined) ?? false;
+  const availability = useSingleVariantAvailability(selectedVariant ? itemId(selectedVariant) : undefined);
+  const stockEnforced = inventoryTracked && !allowBackorder;
+  const outOfStock = stockEnforced && !availability.isLoading && availability.totalAvailable <= 0;
+
   const colorOptions = useMemo(() => {
     const seen = new Map<string, { value: string; variantId: string }>();
     for (const variant of variants) {
@@ -150,6 +160,10 @@ export default function ProductDetailPage() {
   function handleAddToCart() {
     if (!product || !selectedVariant || !price) {
       toast.error("This product isn't available to purchase right now.");
+      return;
+    }
+    if (outOfStock) {
+      toast.error("This item is out of stock.");
       return;
     }
     add(
@@ -287,12 +301,28 @@ export default function ProductDetailPage() {
 
             {product.ShortDescription ? <p className="text-sm text-steel">{product.ShortDescription as string}</p> : null}
 
+            {stockEnforced && !availability.isLoading && (
+              <p className={clsx("text-xs font-medium", outOfStock ? "text-brand-error" : availability.totalAvailable <= 5 ? "text-brand-warn" : "text-brand-success")}>
+                {outOfStock
+                  ? "Out of stock"
+                  : availability.totalAvailable <= 5
+                    ? `Only ${availability.totalAvailable} left in stock`
+                    : "In stock"}
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <QuantityStepper value={quantity} onChange={setQuantity} />
-              <Button variant="secondary" onClick={handleAddToCart}>
+              <QuantityStepper
+                value={quantity}
+                onChange={setQuantity}
+                max={stockEnforced ? Math.max(1, availability.totalAvailable) : 99}
+              />
+              <Button variant="secondary" onClick={handleAddToCart} disabled={outOfStock}>
                 Add to Cart
               </Button>
-              <Button onClick={handleAddToCart}>Buy Now</Button>
+              <Button onClick={handleAddToCart} disabled={outOfStock}>
+                Buy Now
+              </Button>
             </div>
           </div>
         </div>
