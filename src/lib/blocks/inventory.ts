@@ -61,3 +61,95 @@ export function useSingleVariantAvailability(variantId: string | undefined): Var
   const result = variantId ? availability.get(variantId) : undefined;
   return { totalAvailable: result?.totalAvailable ?? 0, isTracked: result?.isTracked ?? false, isLoading };
 }
+
+export interface CartLineStock {
+  /** Total sellable across every warehouse. */
+  available: number;
+  /** True when this line should be capped at `available` — tracked, and no backorder. */
+  enforced: boolean;
+  /** Max quantity this line may take, or null when nothing constrains it. */
+  limit: number | null;
+  /** Quantity already in the cart beyond what's available. 0 when fine. */
+  shortfall: number;
+}
+
+interface StockCheckLine {
+  key: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}
+
+/**
+ * Per-line stock state for a cart.
+ *
+ * The cart stores a price and a quantity, not a stock position — so a line added when six
+ * were available is still a line of six long after someone else bought them. This re-reads
+ * availability for everything in the cart so the quantity stepper can cap, and so checkout
+ * can refuse before taking money.
+ *
+ * `IsInventoryTracked`/`AllowBackorder` live on the variant (falling back to the product, as
+ * `ProductDetailPage` does), and a cart line carries neither — so variants are fetched by
+ * their `ProductId`, which every cart line does carry. That over-fetches sibling variants of
+ * the same product; it avoids assuming the generated `ProductVariantFilterInput` supports an
+ * `ItemId: {in: [...]}` filter, which is not something to guess at without a live schema to
+ * check against.
+ */
+export function useCartStock(items: StockCheckLine[]) {
+  const variantIds = useMemo(
+    () => Array.from(new Set(items.map((item) => item.variantId).filter((id): id is string => Boolean(id)))),
+    [items]
+  );
+  const productIds = useMemo(
+    () => Array.from(new Set(items.map((item) => item.productId).filter(Boolean))),
+    [items]
+  );
+
+  const { availability, isLoading: stockLoading } = useVariantAvailability(variantIds);
+  const variants = useEntityList(
+    "ProductVariant",
+    { where: { ProductId: { in: productIds } }, pageSize: DEFAULT_MAX_ROWS },
+    productIds.length > 0
+  );
+
+  const flagsByVariant = useMemo(() => {
+    const map = new Map<string, { tracked: boolean; backorder: boolean }>();
+    for (const row of variants.data?.items ?? []) {
+      const id = (row.ItemId ?? row.itemId) as string | undefined;
+      if (!id) continue;
+      map.set(id, {
+        tracked: (row.IsInventoryTracked as boolean | undefined) ?? true,
+        backorder: (row.AllowBackorder as boolean | undefined) ?? false,
+      });
+    }
+    return map;
+  }, [variants.data]);
+
+  const byKey = useMemo(() => {
+    const map = new Map<string, CartLineStock>();
+    for (const item of items) {
+      const stock = item.variantId ? availability.get(item.variantId) : undefined;
+      const flags = item.variantId ? flagsByVariant.get(item.variantId) : undefined;
+      // Same rule as the product page: untracked or backorderable means never block. An
+      // unknown variant (no inventory row) is untracked, not out of stock.
+      const enforced = Boolean(stock?.isTracked) && (flags?.tracked ?? true) && !(flags?.backorder ?? false);
+      const available = stock?.totalAvailable ?? 0;
+      map.set(item.key, {
+        available,
+        enforced,
+        limit: enforced ? available : null,
+        shortfall: enforced ? Math.max(0, item.quantity - available) : 0,
+      });
+    }
+    return map;
+  }, [items, availability, flagsByVariant]);
+
+  const isLoading = stockLoading || variants.isLoading;
+
+  return {
+    byKey,
+    isLoading,
+    /** True when at least one line now wants more than exists. Never true while loading. */
+    hasShortfall: !isLoading && Array.from(byKey.values()).some((line) => line.shortfall > 0),
+  };
+}

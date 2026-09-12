@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { useEntityList } from "@/lib/blocks/hooks";
+import { useCartStock } from "@/lib/blocks/inventory";
 import { assignPlaceholders } from "@/lib/placeholder-images";
 import { useTheme } from "@/components/providers/theme-provider";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -24,6 +25,10 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponResult | null>(null);
   const cartPlaceholders = useMemo(() => assignPlaceholders(items, theme), [items, theme]);
+  // A cart line records a price and a quantity, not a stock position — six in the cart stays
+  // six long after someone else buys the last four. Re-read availability here so the stepper
+  // can cap and checkout can be blocked before the customer gets as far as paying.
+  const stock = useCartStock(items);
 
   const suggestions = useEntityList("Product", { pageSize: 8 });
   const suggestionPlaceholders = useMemo(
@@ -83,11 +88,32 @@ export default function CartPage() {
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
-                      <QuantityStepper value={item.quantity} onChange={(q) => updateQuantity(item.key, q)} />
+                      <QuantityStepper
+                        value={item.quantity}
+                        onChange={(q) => updateQuantity(item.key, q)}
+                        max={stock.byKey.get(item.key)?.limit ?? 99}
+                      />
                       <span className="text-sm font-semibold text-ink">
                         {formatMoney(item.unitPrice * item.quantity, item.currency)}
                       </span>
                     </div>
+                    {(() => {
+                      const line = stock.byKey.get(item.key);
+                      if (!line || !line.enforced || stock.isLoading) return null;
+                      if (line.shortfall > 0) {
+                        return (
+                          <p className="mt-1 text-xs font-medium text-brand-error">
+                            {line.available === 0
+                              ? "Out of stock — remove this to continue."
+                              : `Only ${line.available} left. Reduce the quantity to continue.`}
+                          </p>
+                        );
+                      }
+                      if (line.available <= 5) {
+                        return <p className="mt-1 text-xs font-medium text-brand-warn">Only {line.available} left in stock</p>;
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               ))}
@@ -137,9 +163,14 @@ export default function CartPage() {
                   </div>
                   <span className="text-lg font-semibold text-ink">{formatMoney(total, currency)}</span>
                 </div>
-                <Button className="mt-4 w-full" onClick={() => navigate("/checkout")}>
+                <Button className="mt-4 w-full" onClick={() => navigate("/checkout")} disabled={stock.hasShortfall}>
                   Checkout →
                 </Button>
+                {stock.hasShortfall && (
+                  <p className="mt-2 text-center text-xs text-brand-error">
+                    Some items are no longer available in the quantity you chose.
+                  </p>
+                )}
               </div>
             </div>
           </div>

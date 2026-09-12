@@ -225,28 +225,45 @@ export type HoldOutcome =
 /**
  * Allocate and hold stock for a checkout attempt.
  *
- * `skipped` is a success, not a failure: it means there is nothing to reserve (no tracked
- * variants) or reservations aren't enabled yet, and checkout should carry on exactly as it
- * does today. Only `unavailable` and `failed` should stop the customer.
+ * The **check** always runs, even when holds are disabled. Reading `WarehouseInventory` works
+ * today — it's a live, publicly readable schema — so a cart holding more than exists can be
+ * refused before the customer pays, whether or not reservations are switched on. Only the
+ * write half waits on `VITE_INVENTORY_WRITES_LIVE`. A check that only worked once everything
+ * else was imported would be no check at all for the situation the app is actually in.
+ *
+ * `skipped` is a success, not a failure: nothing needed reserving, or reservations aren't
+ * enabled yet, and checkout should carry on. Only `unavailable` and `failed` stop the customer.
  */
 export async function holdStockForCheckout(
   items: CartLine[],
   customerId: string,
   attemptKey: string,
-  actor: Actor
+  actor: Actor,
+  options: {
+    /**
+     * Check availability but take nothing. Used when the order that would justify the hold
+     * isn't real — checkout still simulates placement until the Commerce schemas are
+     * imported, and holding live stock against a simulated order strands it until expiry.
+     */
+    hold?: boolean;
+  } = {}
 ): Promise<HoldOutcome> {
-  if (!INVENTORY_WRITES_LIVE) return { kind: "skipped", reason: "writes-disabled" };
-
+  const shouldHold = options.hold !== false;
   let allocation: AllocationResult;
   try {
     allocation = await allocateCartLines(items);
   } catch (error) {
+    // With holds off this is only an advisory check, so a transient read failure must not be
+    // what stops a sale. With holds on it's load-bearing — stock that can't be read can't be
+    // held, and proceeding would be the oversell this module exists to prevent.
+    if (!INVENTORY_WRITES_LIVE || !shouldHold) return { kind: "skipped", reason: "writes-disabled" };
     return { kind: "failed", message: error instanceof Error ? error.message : String(error) };
   }
 
   if (allocation.shortfalls.length > 0) {
     return { kind: "unavailable", shortfalls: allocation.shortfalls };
   }
+  if (!INVENTORY_WRITES_LIVE || !shouldHold) return { kind: "skipped", reason: "writes-disabled" };
   if (allocation.lines.length === 0) {
     return { kind: "skipped", reason: "nothing-tracked" };
   }

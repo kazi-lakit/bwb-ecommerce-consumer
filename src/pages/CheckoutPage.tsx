@@ -169,28 +169,23 @@ export default function CheckoutPage() {
     }
     setPlacing(true);
 
-    if (!COMMERCE_SCHEMAS_LIVE) {
-      // Order schema not imported yet (see COMMERCE_SCHEMAS_DRAFT.md) — simulates
-      // placement so the flow can still be demoed/tested end to end.
-      setTimeout(() => {
-        clear();
-        navigate("/order-confirmation", {
-          state: { orderNumber: `ORD-${Date.now().toString().slice(-8)}`, total, currency, deliveryOption },
-        });
-      }, 500);
-      return;
-    }
-
-    // Hold the stock before taking the order, so two customers can't buy the same last unit.
-    // Only on the real-order path: reserving live stock against a simulated order would strand
-    // it until expiry. Returns `skipped` when nothing is tracked or reservations aren't
-    // enabled yet, and checkout carries on exactly as before.
+    // Re-check availability before taking the order — the cart may have been sitting open
+    // while someone else bought the last unit. The check runs on every path, including the
+    // simulated one, because reading stock works today; only the hold waits on the schema
+    // imports. Holding against a simulated order would strand stock until expiry, so the
+    // hold itself is gated on placement being real.
     let hold: CheckoutHold | null = null;
-    const outcome = await holdStockForCheckout(items, user!.itemId, idempotencyKeyRef.current, {
-      type: "user",
-      id: user!.itemId,
-      name: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || undefined,
-    });
+    const outcome = await holdStockForCheckout(
+      items,
+      user!.itemId,
+      idempotencyKeyRef.current,
+      {
+        type: "user",
+        id: user!.itemId,
+        name: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || undefined,
+      },
+      { hold: COMMERCE_SCHEMAS_LIVE }
+    );
 
     if (outcome.kind === "unavailable") {
       const names = outcome.shortfalls.map((s) => `${s.name} (${s.available} left)`).join(", ");
@@ -205,6 +200,18 @@ export default function CheckoutPage() {
     }
     if (outcome.kind === "held") {
       hold = outcome.hold;
+    }
+
+    if (!COMMERCE_SCHEMAS_LIVE) {
+      // Order schema not imported yet (see COMMERCE_SCHEMAS_DRAFT.md) — simulates
+      // placement so the flow can still be demoed/tested end to end.
+      setTimeout(() => {
+        clear();
+        navigate("/order-confirmation", {
+          state: { orderNumber: `ORD-${Date.now().toString().slice(-8)}`, total, currency, deliveryOption },
+        });
+      }, 500);
+      return;
     }
 
     try {

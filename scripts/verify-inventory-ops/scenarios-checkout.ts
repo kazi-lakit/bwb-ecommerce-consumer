@@ -122,6 +122,20 @@ export async function run(): Promise<number> {
   check("skipped", outcome.kind === "skipped", outcome.kind);
   check("no reservation", store.reservations.length === 0);
 
+  console.log("\nC12. check-only: a shortfall still stops checkout");
+  reset([row("B1", "W1", "V1", 1)]);
+  outcome = await holdStockForCheckout([cart("V1", 4)], "CUST1", "ATT8", actor, { hold: false });
+  check("unavailable", outcome.kind === "unavailable", outcome.kind);
+  check("nothing held", store.reservations.length === 0 && store.rows[0].Quantity.Reserved === 0);
+
+  console.log("\nC13. check-only: enough stock takes nothing");
+  reset([row("B1", "W1", "V1", 10)]);
+  outcome = await holdStockForCheckout([cart("V1", 3)], "CUST1", "ATT9", actor, { hold: false });
+  check("skipped, not held", outcome.kind === "skipped", outcome.kind);
+  check("no reservation record", store.reservations.length === 0);
+  check("stock untouched", store.rows[0].Quantity.Reserved === 0);
+  check("no ledger row", store.movements.length === 0);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   return fail;
 }
