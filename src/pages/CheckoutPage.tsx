@@ -16,6 +16,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatMoney } from "@/lib/product-pricing";
 import { validateCoupon, type CouponResult } from "@/lib/coupons";
 import { COMMERCE_SCHEMAS_LIVE, generateIdempotencyKey, placeOrder as placeOrderRemote } from "@/lib/blocks/commerce";
+import {
+  attachHoldToOrder,
+  holdStockForCheckout,
+  releaseCheckoutHold,
+  type CheckoutHold,
+} from "@/lib/blocks/checkout-inventory";
 
 const DELIVERY_CHARGE = 120;
 
@@ -165,6 +171,32 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Hold the stock before taking the order, so two customers can't buy the same last unit.
+    // Only on the real-order path: reserving live stock against a simulated order would strand
+    // it until expiry. Returns `skipped` when nothing is tracked or reservations aren't
+    // enabled yet, and checkout carries on exactly as before.
+    let hold: CheckoutHold | null = null;
+    const outcome = await holdStockForCheckout(items, user!.itemId, idempotencyKeyRef.current, {
+      type: "user",
+      id: user!.itemId,
+      name: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || undefined,
+    });
+
+    if (outcome.kind === "unavailable") {
+      const names = outcome.shortfalls.map((s) => `${s.name} (${s.available} left)`).join(", ");
+      toast.error(`Some items sold out while you were checking out: ${names}. Please update your cart.`);
+      setPlacing(false);
+      return;
+    }
+    if (outcome.kind === "failed") {
+      toast.error(`Couldn't hold stock for your order: ${outcome.message}`);
+      setPlacing(false);
+      return;
+    }
+    if (outcome.kind === "held") {
+      hold = outcome.hold;
+    }
+
     try {
       const { itemId, orderNumber } = await placeOrderRemote({
         customerId: user!.itemId,
@@ -183,11 +215,22 @@ export default function CheckoutPage() {
         // a profile-convenience write.
         void saveAddress({ Line1: addressLine.trim(), City: city.trim(), PostalCode: postalCode.trim() });
       }
+      if (hold) {
+        // Also best-effort, and for the same reason: the stock is already held correctly,
+        // this only records which order it's held for. The reservation stays `active` —
+        // committing it reduces on-hand, which happens when the goods actually ship.
+        void attachHoldToOrder(hold, itemId, orderNumber);
+      }
       clear();
       navigate("/order-confirmation", { state: { orderNumber, itemId, total, currency, deliveryOption } });
     } catch {
       // blocksDataCall already surfaced a toast for the specific error; keep the cart and
       // idempotency key intact so the customer can just retry.
+      if (hold) {
+        // Give the stock back straight away rather than making someone else wait out the
+        // reservation's expiry for inventory this order never took.
+        void releaseCheckoutHold(hold);
+      }
       setPlacing(false);
     }
   }

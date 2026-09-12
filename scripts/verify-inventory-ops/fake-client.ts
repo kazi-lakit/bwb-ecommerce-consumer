@@ -7,12 +7,15 @@ export const store: {
   rejectUnknownBuckets: boolean;
   denyWrites: boolean;
   onCas?: () => void;                      // simulate a concurrent writer
-} = { rows: [], movements: [], casResultOverride: [], failMovement: false, rejectUnknownBuckets: false, denyWrites: false };
+  reservations: Record<string, unknown>[];
+  failReservationInsert: boolean;
+} = { rows: [], movements: [], casResultOverride: [], failMovement: false, rejectUnknownBuckets: false, denyWrites: false, reservations: [], failReservationInsert: false };
 
 export function reset(rows: Row[]) {
   store.rows = JSON.parse(JSON.stringify(rows));
   store.movements = []; store.casResultOverride = [];
   store.failMovement = false; store.denyWrites = false; store.onCas = undefined;
+  store.reservations = []; store.failReservationInsert = false;
 }
 
 const NEW_BUCKETS = ["Blocked", "Backordered", "InTransit"];
@@ -27,9 +30,18 @@ export const blocksClient = {
         if (store.rejectUnknownBuckets && NEW_BUCKETS.some((b) => query.includes(b))) {
           throw new Error('Unknown field "Blocked" on type "InventoryQuantity".');
         }
-        const w = variables.where;
+        // Supports the two filter shapes the app actually issues: inventory-ops reads one
+        // balance by {WarehouseId:{eq}, VariantId:{eq}}, checkout-inventory reads many by
+        // {VariantId:{in:[...]}}.
+        const w = variables.where ?? {};
+        const matches = (field: any, value: unknown) => {
+          if (!field) return true;
+          if ("eq" in field) return field.eq === value;
+          if ("in" in field) return (field.in as unknown[]).includes(value);
+          return true;
+        };
         const items = store.rows.filter(
-          (r) => (r as any).WarehouseId === w.WarehouseId.eq && (r as any).VariantId === w.VariantId.eq
+          (r) => matches(w.WarehouseId, (r as any).WarehouseId) && matches(w.VariantId, (r as any).VariantId)
         );
         return { data: { getWarehouseInventorys: { items, totalCount: items.length } } };
       }
@@ -52,6 +64,20 @@ export const blocksClient = {
         row.AvailableToSell = variables.input.AvailableToSell;
         row.Version = variables.input.Version;
         return { data: { updateWarehouseInventory: { acknowledged: true, totalImpactedData: 1 } } };
+      }
+
+      if (operationName === "insertInventoryReservation") {
+        if (store.failReservationInsert) throw new Error("reservation insert failed");
+        const id = "RES" + (store.reservations.length + 1);
+        store.reservations.push({ ItemId: id, ...variables.input });
+        return { data: { insertInventoryReservation: { acknowledged: true, itemId: id } } };
+      }
+
+      if (operationName === "updateInventoryReservation") {
+        const target = store.reservations.find((r) => (r as any).ItemId === variables.where.ItemId.eq);
+        if (!target) return { data: { updateInventoryReservation: { totalImpactedData: 0 } } };
+        Object.assign(target, variables.input);
+        return { data: { updateInventoryReservation: { acknowledged: true, totalImpactedData: 1 } } };
       }
 
       if (operationName === "insertInventoryMovement") {

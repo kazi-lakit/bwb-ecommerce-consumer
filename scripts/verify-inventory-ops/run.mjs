@@ -1,6 +1,7 @@
 /**
- * Verifies `src/lib/blocks/inventory-ops.ts` — the guarded compare-and-swap stock
- * operations that prevent overselling — against a simulated Data Gateway.
+ * Verifies `src/lib/blocks/inventory-ops.ts` (the guarded compare-and-swap stock operations
+ * that prevent overselling) and `src/lib/blocks/checkout-inventory.ts` (allocation and the
+ * checkout hold/release flow built on them) against a simulated Data Gateway.
  *
  *     npm run verify:inventory
  *
@@ -15,7 +16,8 @@
  * what ships. Only its two gateway imports are swapped for fakes:
  *   ./client → fake-client.ts   an in-memory store that enforces the CAS filter the way a
  *                               single Mongo UpdateOne would, and can simulate contention,
- *                               concurrent writers, denied writes and ledger failures
+ *                               concurrent writers, denied writes, ledger failures and a
+ *                               failing reservation insert
  *   ./http   → fake-http.ts     passthrough, minus session refresh and toasts
  */
 import { fileURLToPath } from "node:url";
@@ -42,8 +44,9 @@ const server = await createServer({
 });
 
 try {
-  const { run } = await server.ssrLoadModule(resolve(here, "scenarios.ts"));
-  const failures = await run();
+  const stock = await server.ssrLoadModule(resolve(here, "scenarios.ts"));
+  const checkout = await server.ssrLoadModule(resolve(here, "scenarios-checkout.ts"));
+  const failures = (await stock.run()) + (await checkout.run());
   await server.close();
   process.exit(failures === 0 ? 0 : 1);
 } catch (error) {

@@ -58,3 +58,30 @@ Flat, all public except `/checkout` (redirects to hosted login if signed out):
 /wishlist            WishlistPage
 /login/callback      AuthCallbackPage
 ```
+
+## Feature-flagged schema code
+
+Cart/Order/CommerceCustomer (`lib/blocks/commerce.ts`) and the inventory reserve/release path
+(`lib/blocks/inventory-ops.ts`, `lib/blocks/checkout-inventory.ts`) are written against Data
+Gateway schemas and policies that aren't live yet, so both sit behind env flags, off by default:
+
+| Flag | Turns on | Blocked on |
+|---|---|---|
+| `VITE_COMMERCE_SCHEMAS_LIVE` | server cart, real order placement, commerce customer profile | importing `COMMERCE_SCHEMAS_DRAFT.json` |
+| `VITE_INVENTORY_WRITES_LIVE` | stock reservation at checkout | importing `P0_POLICY_FIXES.json` — `WarehouseInventory` writes are denied for **everyone** today, admins included |
+
+**A plain `npm run build` does not compile these paths.** With the flags off, `placeOrder()`
+returns early and Rollup dead-code-eliminates everything downstream — `commerce.ts` and the
+inventory modules disappear from the bundle entirely (which is the right outcome for
+production: no dead weight shipped). It does mean a green build proves nothing about the
+flagged code. `tsc -b`/`eslint` always cover it; to check it actually bundles:
+
+```bash
+VITE_COMMERCE_SCHEMAS_LIVE=true VITE_INVENTORY_WRITES_LIVE=true npm run build
+```
+
+And to exercise the inventory logic against a simulated Data Gateway:
+
+```bash
+npm run verify:inventory
+```
