@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import clsx from "clsx";
@@ -15,7 +15,12 @@ import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { formatMoney } from "@/lib/product-pricing";
 import { validateCoupon, type CouponResult } from "@/lib/coupons";
-import { COMMERCE_SCHEMAS_LIVE, generateIdempotencyKey, placeOrder as placeOrderRemote } from "@/lib/blocks/commerce";
+import {
+  COMMERCE_SCHEMAS_LIVE,
+  formatAddress,
+  generateIdempotencyKey,
+  placeOrder as placeOrderRemote,
+} from "@/lib/blocks/commerce";
 import {
   attachHoldToOrder,
   holdStockForCheckout,
@@ -65,6 +70,10 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [saveThisAddress, setSaveThisAddress] = useState(true);
+  // Which saved address is in use: an index into the profile's list, or "new" for the form.
+  // Null means "not decided yet" — the effect below picks once the profile loads, and never
+  // again, so it can't stamp over a choice the customer has made.
+  const [addressChoice, setAddressChoice] = useState<number | "new" | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryOption, setDeliveryOption] = useState<"doorstep" | "pickup">("doorstep");
   const [agreed, setAgreed] = useState(false);
@@ -94,16 +103,32 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  // Prefill from the most recently saved address on the commerce profile, if any — never
-  // overwrites something the customer already typed. `customer` stays null (no-op) until
-  // the Commerce schemas are live and this profile has loaded.
+  // Memoised: `?? []` would hand the effects below a fresh array identity every render.
+  const savedAddresses = useMemo(() => customer?.addresses ?? [], [customer]);
+
+  // Pick a default once, when the profile first arrives: the most recently saved address,
+  // which is the one someone is most likely to want again. Guarded on addressChoice still
+  // being null so a later profile refresh can't undo a deliberate choice. `customer` stays
+  // null (so this is a no-op) until the Commerce schemas are live.
   useEffect(() => {
-    const saved = customer?.addresses.at(-1);
-    if (!saved) return;
-    setAddressLine((v) => v || saved.Line1 || "");
-    setCity((v) => v || saved.City || "");
-    setPostalCode((v) => v || saved.PostalCode || "");
-  }, [customer]);
+    if (addressChoice !== null || savedAddresses.length === 0) return;
+    setAddressChoice(savedAddresses.length - 1);
+  }, [addressChoice, savedAddresses.length]);
+
+  /**
+   * The saved addresses fill the same form fields a typed address would, rather than
+   * bypassing them. One source of truth for validation, order placement and the "save this
+   * address" path — picking a saved address is a shortcut for typing it, not a second code
+   * path that could drift from the first.
+   */
+  useEffect(() => {
+    if (typeof addressChoice !== "number") return;
+    const chosen = savedAddresses[addressChoice];
+    if (!chosen) return;
+    setAddressLine(chosen.Line1 ?? "");
+    setCity(chosen.City ?? "");
+    setPostalCode(chosen.PostalCode ?? "");
+  }, [addressChoice, savedAddresses]);
 
   const currency = items[0]?.currency ?? "USD";
   const discount = coupon?.valid ? coupon.discountAmount : 0;
@@ -227,7 +252,7 @@ export default function CheckoutPage() {
         shippingAddress: { Line1: addressLine.trim(), City: city.trim(), PostalCode: postalCode.trim() },
         idempotencyKey: idempotencyKeyRef.current,
       });
-      if (saveThisAddress) {
+      if (saveThisAddress && addressChoice === "new") {
         // Best-effort — the order already placed successfully; don't fail checkout over
         // a profile-convenience write.
         void saveAddress({ Line1: addressLine.trim(), City: city.trim(), PostalCode: postalCode.trim() });
@@ -271,17 +296,85 @@ export default function CheckoutPage() {
             </AccordionSection>
 
             <AccordionSection title="Delivery Address" defaultOpen>
+              {savedAddresses.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  {savedAddresses.map((address, i) => (
+                    <label
+                      key={`${address.Line1}-${i}`}
+                      className={clsx(
+                        "flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm",
+                        addressChoice === i ? "border-brand-accent bg-surface" : "border-hairline"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="delivery-address"
+                        checked={addressChoice === i}
+                        onChange={() => setAddressChoice(i)}
+                        className="mt-0.5 accent-[var(--color-brand-accent)]"
+                      />
+                      <span className="text-ink">{formatAddress(address)}</span>
+                    </label>
+                  ))}
+                  <label
+                    className={clsx(
+                      "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm",
+                      addressChoice === "new" ? "border-brand-accent bg-surface" : "border-hairline"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="delivery-address"
+                      checked={addressChoice === "new"}
+                      onChange={() => {
+                        setAddressChoice("new");
+                        setAddressLine("");
+                        setCity("");
+                        setPostalCode("");
+                      }}
+                      className="accent-[var(--color-brand-accent)]"
+                    />
+                    <span className="text-ink">Use a different address</span>
+                  </label>
+                </div>
+              )}
+
+              {/* Always rendered, never hidden behind the picker: a saved address the
+                  customer wants to tweak for this one order should be editable in place.
+                  Typing switches the choice to "new" so the edit isn't silently discarded
+                  by the effect that mirrors the selected address back into these fields. */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input
                   value={addressLine}
-                  onChange={(e) => setAddressLine(e.target.value)}
+                  onChange={(e) => {
+                    setAddressChoice("new");
+                    setAddressLine(e.target.value);
+                  }}
                   placeholder="Street address"
                   className="sm:col-span-2"
                 />
-                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
-                <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Postal code" />
+                <Input
+                  value={city}
+                  onChange={(e) => {
+                    setAddressChoice("new");
+                    setCity(e.target.value);
+                  }}
+                  placeholder="City"
+                />
+                <Input
+                  value={postalCode}
+                  onChange={(e) => {
+                    setAddressChoice("new");
+                    setPostalCode(e.target.value);
+                  }}
+                  placeholder="Postal code"
+                />
               </div>
-              {customer && (
+
+              {/* Only offered for an address that isn't already on the profile. Saving one
+                  that's already there is a no-op (addCustomerAddress dedupes), but offering
+                  it would suggest otherwise. */}
+              {customer && addressChoice === "new" && (
                 <label className="mt-3 flex items-center gap-2 text-xs text-steel">
                   <input
                     type="checkbox"
