@@ -22,6 +22,7 @@ import {
   releaseCheckoutHold,
   type CheckoutHold,
 } from "@/lib/blocks/checkout-inventory";
+import { sweepExpiredReservationsInBackground } from "@/lib/blocks/reservation-sweep";
 
 const DELIVERY_CHARGE = 120;
 
@@ -74,6 +75,15 @@ export default function CheckoutPage() {
   // resubmit after a failed/slow request can't place the order twice once IdempotencyKey
   // is backed by a real unique index (see commerce.ts).
   const idempotencyKeyRef = useRef(generateIdempotencyKey());
+
+  // Collect stock abandoned by other people's expired checkouts before this one allocates —
+  // there is no scheduler, so arriving at checkout is one of the moments something has to
+  // notice (reservation-sweep.ts). Throttled per session and fire-and-forget: it must never
+  // be what makes this page slow, and a sweep that doesn't run just means slightly less
+  // stock is visible.
+  useEffect(() => {
+    sweepExpiredReservationsInBackground();
+  }, []);
 
   useEffect(() => {
     if (user) {

@@ -9,13 +9,14 @@ export const store: {
   onCas?: () => void;                      // simulate a concurrent writer
   reservations: Record<string, unknown>[];
   failReservationInsert: boolean;
+  onReservationUpdate?: () => void;
 } = { rows: [], movements: [], casResultOverride: [], failMovement: false, rejectUnknownBuckets: false, denyWrites: false, reservations: [], failReservationInsert: false };
 
 export function reset(rows: Row[]) {
   store.rows = JSON.parse(JSON.stringify(rows));
   store.movements = []; store.casResultOverride = [];
   store.failMovement = false; store.denyWrites = false; store.onCas = undefined;
-  store.reservations = []; store.failReservationInsert = false;
+  store.reservations = []; store.failReservationInsert = false; store.onReservationUpdate = undefined;
 }
 
 const NEW_BUCKETS = ["Blocked", "Backordered", "InTransit"];
@@ -73,9 +74,30 @@ export const blocksClient = {
         return { data: { insertInventoryReservation: { acknowledged: true, itemId: id } } };
       }
 
+      if (operationName === "getInventoryReservations") {
+        const w = variables.where ?? {};
+        const items = store.reservations.filter((r: any) => {
+          if (w.Status && r.Status !== w.Status.eq) return false;
+          if (w.ExpiresDate?.lt && !(r.ExpiresDate < w.ExpiresDate.lt)) return false;
+          return true;
+        });
+        return { data: { getInventoryReservations: { items, totalCount: items.length } } };
+      }
+
       if (operationName === "updateInventoryReservation") {
-        const target = store.reservations.find((r) => (r as any).ItemId === variables.where.ItemId.eq);
+        const target: any = store.reservations.find((r) => (r as any).ItemId === variables.where.ItemId.eq);
         if (!target) return { data: { updateInventoryReservation: { totalImpactedData: 0 } } };
+        // Fires before the filter is evaluated, not between the check and the write: a real
+        // UpdateOne matches and writes atomically, so a competing update either lands wholly
+        // before this one or wholly after. Firing it in the middle would invent a
+        // check-then-act gap the gateway doesn't have, and would let this fake "pass" code
+        // that a real race would break.
+        store.onReservationUpdate?.();
+        // The conditional part: a filter naming Status only matches while it still holds,
+        // which is what makes the sweep's claim a real compare-and-swap.
+        if (variables.where.Status && target.Status !== variables.where.Status.eq) {
+          return { data: { updateInventoryReservation: { acknowledged: true, totalImpactedData: 0 } } };
+        }
         Object.assign(target, variables.input);
         return { data: { updateInventoryReservation: { acknowledged: true, totalImpactedData: 1 } } };
       }
