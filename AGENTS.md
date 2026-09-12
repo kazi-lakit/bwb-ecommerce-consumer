@@ -46,18 +46,34 @@ imported and reloaded, with no separate regeneration step required for these thr
 
 ## Routes
 
-Flat, all public except `/checkout` (redirects to hosted login if signed out):
+Public by default; `/checkout` and everything under `/account` require a session:
 
 ```
-/                    HomePage             hero, category rails, "pick your category"
-/products            ProductListingPage   filterable/sortable grid
-/product/:slug       ProductDetailPage
-/cart                CartPage
-/checkout            CheckoutPage
-/order-confirmation  OrderConfirmationPage
-/wishlist            WishlistPage
-/login/callback      AuthCallbackPage
+/                         HomePage                  hero, category rails, "pick your category"
+/products                 ProductListingPage        filterable/sortable grid
+/product/:slug            ProductDetailPage
+/cart                     CartPage
+/checkout                 CheckoutPage              auth-gated
+/order-confirmation       OrderConfirmationPage
+/wishlist                 WishlistPage
+/account                  →  /account/orders
+/account/orders           AccountOrdersPage         auth-gated
+/account/orders/:orderId  AccountOrderDetailPage    auth-gated
+/account/addresses        AccountAddressesPage      auth-gated
+/account/profile          AccountProfilePage        auth-gated
+/login/callback           AuthCallbackPage
 ```
+
+`/account/*` is gated by `components/providers/require-auth.tsx`, which shows a sign-in prompt
+rather than redirecting straight into the hosted SSO flow the way the backoffice does — this is
+a public storefront, and someone arriving from a bookmark should be told where they are first.
+That gate is a convenience, not the security boundary: `Order`'s row-level policy restricts
+reads to the customer's own records regardless of what the client does.
+
+The account pages read real data only when `VITE_COMMERCE_SCHEMAS_LIVE` is on; otherwise each
+explains what it's waiting for. Profile is read-only on purpose — name, email and phone live in
+IAM, and deciding which of those a customer may change about themselves isn't a call to make as
+a side effect of building an account page.
 
 ## Feature-flagged schema code
 

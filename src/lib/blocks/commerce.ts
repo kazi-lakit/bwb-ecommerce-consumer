@@ -420,3 +420,37 @@ export async function addCustomerAddress(customer: CommerceCustomer, address: Co
   }
   return addresses;
 }
+
+/**
+ * Replaces the customer's whole address list.
+ *
+ * `Addresses` is an embedded array on one document, so there is no "delete one element"
+ * mutation to reach for — the array is written whole, which also means two tabs editing
+ * addresses at once will have the last writer win. Acceptable for a personal address book;
+ * worth revisiting if addresses ever become their own entity (which is what would make them
+ * individually queryable, per INDEX_PLAN.json's second hazard).
+ */
+export async function setCustomerAddresses(
+  customer: CommerceCustomer,
+  addresses: CommerceAddress[]
+): Promise<CommerceAddress[]> {
+  await blocksDataCall(() =>
+    blocksClient.data.graphql({
+      operationName: "updateCommerceCustomer",
+      query: UPDATE_CUSTOMER_MUTATION,
+      variables: { where: { ItemId: { eq: customer.itemId } }, input: { Addresses: addresses } },
+    })
+  );
+  return addresses;
+}
+
+/**
+ * Human-readable one-liner for an address, used wherever one is listed or picked. Takes a
+ * partial rather than a full `CommerceAddress` because order records carry an address
+ * snapshot whose fields are all individually optional — it only ever reads them.
+ */
+export function formatAddress(address: Partial<CommerceAddress>): string {
+  return [address.Line1, address.Line2, address.City, address.State, address.PostalCode, address.CountryCode]
+    .filter(Boolean)
+    .join(", ");
+}

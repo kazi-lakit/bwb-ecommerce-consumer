@@ -6,6 +6,7 @@ import {
   addCustomerAddress,
   COMMERCE_SCHEMAS_LIVE,
   ensureCommerceCustomer,
+  setCustomerAddresses,
   type CommerceAddress,
   type CommerceCustomer,
 } from "@/lib/blocks/commerce";
@@ -15,11 +16,14 @@ interface CommerceCustomerContextValue {
   customer: CommerceCustomer | null;
   /** Saves an address to the profile if it isn't already there. No-op when `customer` is null. */
   saveAddress: (address: CommerceAddress) => Promise<void>;
+  /** Removes the address at `index`. No-op when `customer` is null. */
+  removeAddress: (index: number) => Promise<void>;
 }
 
 const CommerceCustomerContext = createContext<CommerceCustomerContextValue>({
   customer: null,
   saveAddress: async () => {},
+  removeAddress: async () => {},
 });
 
 /**
@@ -70,7 +74,14 @@ export function CommerceCustomerProvider({ children }: { children: React.ReactNo
     setCustomer({ ...customer, addresses });
   }
 
-  return <CommerceCustomerContext.Provider value={{ customer, saveAddress }}>{children}</CommerceCustomerContext.Provider>;
+  async function removeAddress(index: number) {
+    if (!customer) return;
+    const addresses = customer.addresses.filter((_, i) => i !== index);
+    await setCustomerAddresses(customer, addresses);
+    setCustomer({ ...customer, addresses });
+  }
+
+  return <CommerceCustomerContext.Provider value={{ customer, saveAddress, removeAddress }}>{children}</CommerceCustomerContext.Provider>;
 }
 
 export function useCommerceCustomer() {

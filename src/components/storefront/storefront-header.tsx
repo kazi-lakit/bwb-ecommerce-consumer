@@ -140,6 +140,20 @@ export function StorefrontHeader() {
                 </button>
                 {userMenuOpen && (
                   <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-sm border border-hairline bg-surface py-1">
+                    <Link
+                      to="/account/orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block w-full px-3 py-2 text-left text-xs uppercase tracking-[0.05em] text-ink hover:bg-surface-soft"
+                    >
+                      Your orders
+                    </Link>
+                    <Link
+                      to="/account/addresses"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block w-full px-3 py-2 text-left text-xs uppercase tracking-[0.05em] text-ink hover:bg-surface-soft"
+                    >
+                      Addresses
+                    </Link>
                     <button
                       type="button"
                       onClick={() => {
