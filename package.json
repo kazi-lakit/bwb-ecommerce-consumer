@@ -13,7 +13,8 @@
     "build:prod": "BUILD_ENV=prod npm run set-env && tsc -b && vite build",
     "set-env": "node set-env.cjs",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "verify:inventory": "node scripts/verify-inventory-ops/run.mjs"
   },
   "dependencies": {
     "@seliseblocks/client": "^0.1.6",
