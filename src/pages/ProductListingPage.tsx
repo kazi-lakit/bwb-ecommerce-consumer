@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { getProductPrice, getColorSwatchValues } from "@/lib/product-pricing";
 import { useVariantAvailability } from "@/lib/blocks/inventory";
+import { usePageMeta } from "@/lib/seo";
 
 interface AttributeItem {
   Code?: string;
@@ -181,6 +182,20 @@ export default function ProductListingPage() {
   const placeholders = useMemo(() => assignPlaceholders(filtered, theme), [filtered, theme]);
   const loading = products.isLoading || variants.isLoading;
   const heading = (category?.Name as string) || (search ? `Results for "${search}"` : "All Products");
+
+  usePageMeta({
+    title: `${heading} — Logoipsum`,
+    description: category?.Name
+      ? `Browse ${category.Name as string} at Logoipsum.`
+      : "Browse everything we stock — furniture and home decor.",
+    // Canonical drops the query string on purpose: /products?q=sofa and /products?q=couch are
+    // the same page of the same catalog as far as search is concerned, and letting each
+    // produce its own indexable URL is how a catalog ends up competing with itself.
+    canonicalPath: "/products",
+    // A search-results page has nothing durable to offer an index, and its content changes
+    // with every query. Category and brand landing pages are the ones worth indexing.
+    noIndex: Boolean(search),
+  });
 
   function clearFilters() {
     setFabricColor([]);

@@ -28,6 +28,7 @@ import {
   type CheckoutHold,
 } from "@/lib/blocks/checkout-inventory";
 import { sweepExpiredReservationsInBackground } from "@/lib/blocks/reservation-sweep";
+import { usePageMeta } from "@/lib/seo";
 
 const DELIVERY_CHARGE = 120;
 
@@ -57,6 +58,7 @@ function AccordionSection({
 }
 
 export default function CheckoutPage() {
+  usePageMeta({ title: "Checkout — Logoipsum", noIndex: true });
   const navigate = useNavigate();
   const { status, user } = useAuth();
   const { items, subtotal, clear } = useCart();

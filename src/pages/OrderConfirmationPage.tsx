@@ -4,6 +4,7 @@ import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/product-pricing";
+import { usePageMeta } from "@/lib/seo";
 
 interface ConfirmationState {
   orderNumber: string;
@@ -15,6 +16,7 @@ interface ConfirmationState {
 }
 
 export default function OrderConfirmationPage() {
+  usePageMeta({ title: "Order confirmed — Logoipsum", noIndex: true });
   const location = useLocation();
   const state = location.state as ConfirmationState | null;
 

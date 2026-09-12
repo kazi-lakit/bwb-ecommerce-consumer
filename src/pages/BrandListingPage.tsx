@@ -5,6 +5,7 @@ import type { EntityRecord } from "@/lib/blocks/collections";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { Spinner } from "@/components/ui/spinner";
+import { usePageMeta } from "@/lib/seo";
 
 function itemId(record: EntityRecord): string {
   return (record.ItemId ?? record.itemId) as string;
@@ -16,6 +17,11 @@ function itemId(record: EntityRecord): string {
  * search. This is that surface.
  */
 export default function BrandListingPage() {
+  usePageMeta({
+    title: "Brands — Logoipsum",
+    description: "Every brand we stock, in one place.",
+    canonicalPath: "/brands",
+  });
   const brands = useEntityList("Brand", { pageNo: 1, pageSize: 100 });
 
   // Inactive brands stay out of the storefront. The field is optional, so anything without an

@@ -9,6 +9,7 @@ import { AccountLayout } from "@/components/storefront/account-layout";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { formatMoney } from "@/lib/product-pricing";
+import { usePageMeta } from "@/lib/seo";
 
 const PAGE_SIZE = 10;
 
@@ -25,6 +26,7 @@ export function OrderStatusLine({ order }: { order: AccountOrder }) {
 }
 
 export default function AccountOrdersPage() {
+  usePageMeta({ title: "Your orders — Logoipsum", noIndex: true });
   const { user } = useAuth();
   const [pageNo, setPageNo] = useState(1);
 

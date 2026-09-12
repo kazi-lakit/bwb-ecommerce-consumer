@@ -3,8 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Shop furniture and home decor." />
+    <meta name="description" content="Furniture and home decor, chosen well. Browse by room, brand or style." />
     <title>Logoipsum — Decorate your Space with Us</title>
+
+    <!--
+      Baseline Open Graph. Per-page tags are set at runtime by src/lib/seo.ts, but social
+      scrapers (Facebook, LinkedIn, Slack, WhatsApp, X) read this raw HTML and never run the
+      app, so these are the tags every shared link actually gets. Making them per-page needs
+      prerendering or SSR — see seo.ts.
+    -->
+    <meta property="og:site_name" content="Logoipsum" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Logoipsum — Decorate your Space with Us" />
+    <meta property="og:description" content="Furniture and home decor, chosen well. Browse by room, brand or style." />
+    <meta name="twitter:card" content="summary" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -8,6 +8,7 @@ import { AccountLayout } from "@/components/storefront/account-layout";
 import { EmptyNotice, OrderStatusLine } from "@/pages/AccountOrdersPage";
 import { Spinner } from "@/components/ui/spinner";
 import { formatMoney } from "@/lib/product-pricing";
+import { usePageMeta } from "@/lib/seo";
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
@@ -19,6 +20,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 }
 
 export default function AccountOrderDetailPage() {
+  usePageMeta({ title: "Order — Logoipsum", noIndex: true });
   const { orderId } = useParams();
   const { user } = useAuth();
 

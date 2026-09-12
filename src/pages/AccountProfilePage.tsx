@@ -2,6 +2,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useCommerceCustomer } from "@/components/providers/commerce-customer-provider";
 import { AccountLayout } from "@/components/storefront/account-layout";
 import { Button } from "@/components/ui/button";
+import { usePageMeta } from "@/lib/seo";
 
 function Field({ label, value }: { label: string; value?: string }) {
   return (
@@ -13,6 +14,7 @@ function Field({ label, value }: { label: string; value?: string }) {
 }
 
 export default function AccountProfilePage() {
+  usePageMeta({ title: "Your profile — Logoipsum", noIndex: true });
   const { user, logout } = useAuth();
   const { customer } = useCommerceCustomer();
 

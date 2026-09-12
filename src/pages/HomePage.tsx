@@ -9,12 +9,18 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { HeroBanner } from "@/components/storefront/hero-banner";
 import { ProductRail, type ProductRailItem } from "@/components/storefront/product-rail";
 import { getProductPrice, getColorSwatchValues, isOnSale } from "@/lib/product-pricing";
+import { usePageMeta } from "@/lib/seo";
 
 function itemId(record: EntityRecord): string {
   return (record.ItemId ?? record.itemId) as string;
 }
 
 export default function HomePage() {
+  usePageMeta({
+    title: "Logoipsum — Decorate your Space with Us",
+    description: "Furniture and home decor, chosen well. Browse by room, brand or style.",
+    canonicalPath: "/",
+  });
   const { theme } = useTheme();
 
   const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });

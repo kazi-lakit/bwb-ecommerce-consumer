@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getVariantPrice, getProductPrice, formatMoney } from "@/lib/product-pricing";
+import { breadcrumbJsonLd, metaDescription, productJsonLd, usePageMeta } from "@/lib/seo";
 
 interface MediaItem {
   MediaId?: string;
@@ -161,6 +162,48 @@ export default function ProductDetailPage() {
   const dimensions = selectedVariant?.Dimensions as Dimensions | undefined;
   const name = (product.Name as string) || "Untitled product";
   const wishlisted = has(itemId(product));
+
+  usePageMeta(
+    useMemo(() => {
+      const productName = (product?.Name as string) || "Product";
+      const canonical = `/product/${(product?.Slug as string) || slug || ""}`;
+      const image = primary?.Url as string | undefined;
+      return {
+        title: product ? `${productName} — Logoipsum` : "Logoipsum",
+        description: metaDescription(
+          (product?.ShortDescription as string) || (product?.LongDescription as string),
+          `Buy ${productName} at Logoipsum.`
+        ),
+        canonicalPath: canonical,
+        image,
+        type: "product" as const,
+        // Only emitted once the product has actually loaded — structured data describing a
+        // placeholder is worse than none, because it's the version a crawler may cache.
+        jsonLd: product
+          ? {
+              ...productJsonLd({
+                name: productName,
+                description: (product.ShortDescription as string) || undefined,
+                image,
+                sku: (selectedVariant?.Sku as string) || undefined,
+                brand: (brand?.Name as string) || undefined,
+                price: price?.current,
+                currency: price?.currency,
+                // Left undefined while the stock query is in flight, so the page never
+                // asserts availability it doesn't know yet.
+                inStock: !stockEnforced ? true : availability.isLoading ? undefined : !outOfStock,
+                url: `${window.location.origin}${canonical}`,
+              }),
+              breadcrumb: breadcrumbJsonLd([
+                { name: "Home", path: "/" },
+                { name: "Products", path: "/products" },
+                { name: productName, path: canonical },
+              ]),
+            }
+          : undefined,
+      };
+    }, [product, slug, primary, selectedVariant, brand, price, stockEnforced, outOfStock, availability.isLoading])
+  );
 
   function handleAddToCart() {
     if (!product || !selectedVariant || !price) {

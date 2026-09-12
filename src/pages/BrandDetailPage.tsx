@@ -10,6 +10,7 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { ProductCard } from "@/components/storefront/product-card";
 import { Spinner } from "@/components/ui/spinner";
 import { getProductPrice, getColorSwatchValues } from "@/lib/product-pricing";
+import { metaDescription, usePageMeta } from "@/lib/seo";
 
 function itemId(record: EntityRecord): string {
   return (record.ItemId ?? record.itemId) as string;
@@ -47,6 +48,13 @@ export default function BrandDetailPage() {
   }, [variants.data]);
 
   const name = (brand?.Name as string) || "Brand";
+
+  usePageMeta({
+    title: brand ? `${name} — Logoipsum` : "Brands — Logoipsum",
+    description: metaDescription(brand?.Description as string, `Shop ${name} at Logoipsum.`),
+    canonicalPath: `/brand/${(brand?.Slug as string) || slug || ""}`,
+    image: (brand?.LogoUrl as string) || undefined,
+  });
 
   return (
     <div className="min-h-screen bg-canvas">

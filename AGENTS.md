@@ -77,6 +77,25 @@ explains what it's waiting for. Profile is read-only on purpose — name, email 
 IAM, and deciding which of those a customer may change about themselves isn't a call to make as
 a side effect of building an account page.
 
+## SEO
+
+`src/lib/seo.ts` — `usePageMeta` sets title, description, canonical, Open Graph and JSON-LD
+per page and undoes it on unmount (so leaving `/checkout` can't leave the next page marked
+`noindex`). Product pages emit schema.org `Product` + `BreadcrumbList`; cart, checkout,
+wishlist and every `/account` page are `noindex`; `/products?q=` is `noindex` with a canonical
+that drops the query string, so search-result permutations don't compete with the catalog.
+
+**Be clear about the ceiling.** This is a client-rendered SPA: a crawler receives `index.html`
+and everything above is applied afterwards by JavaScript. Googlebot renders JS, so this is
+worth doing. **Most social scrapers don't** — Facebook, LinkedIn, Slack, WhatsApp and X read
+the raw HTML and never run the app, so per-product link previews do **not** work; every shared
+URL falls back to the baseline Open Graph tags in `index.html`. Fixing that needs the tags to
+be in the HTML already, i.e. prerendering at build time (compatible with the no-new-backend
+constraint — it's a build step, not a service) or SSR. Tracked as a follow-up, not half-done.
+
+Verified by the `seo` suite in `npm run verify:inventory`, which runs the real module against
+a minimal fake document.
+
 ## Listing pagination
 
 `/products` uses `useEntityInfiniteList` (in `lib/blocks/hooks.ts`) — pages of 24 that

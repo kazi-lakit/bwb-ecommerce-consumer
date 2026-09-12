@@ -1,8 +1,8 @@
 /**
  * Verifies `src/lib/blocks/inventory-ops.ts` (the guarded compare-and-swap stock operations
  * that prevent overselling) and `src/lib/blocks/checkout-inventory.ts` (allocation and the
- * checkout hold/release flow built on them) and `src/lib/blocks/reservation-sweep.ts` (lazy
- * expiry) against a simulated Data Gateway.
+ * checkout hold/release flow built on them) `src/lib/blocks/reservation-sweep.ts` (lazy
+ * expiry) and `src/lib/seo.ts` (per-page document metadata, against a minimal fake document) against a simulated Data Gateway.
  *
  *     npm run verify:inventory
  *
@@ -48,7 +48,8 @@ try {
   const stock = await server.ssrLoadModule(resolve(here, "scenarios.ts"));
   const checkout = await server.ssrLoadModule(resolve(here, "scenarios-checkout.ts"));
   const sweep = await server.ssrLoadModule(resolve(here, "scenarios-sweep.ts"));
-  const failures = (await stock.run()) + (await checkout.run()) + (await sweep.run());
+  const seo = await server.ssrLoadModule(resolve(here, "scenarios-seo.ts"));
+  const failures = (await stock.run()) + (await checkout.run()) + (await sweep.run()) + (await seo.run());
   await server.close();
   process.exit(failures === 0 ? 0 : 1);
 } catch (error) {

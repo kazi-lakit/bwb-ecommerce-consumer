@@ -7,10 +7,12 @@ import { EmptyNotice } from "@/pages/AccountOrdersPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast-store";
+import { usePageMeta } from "@/lib/seo";
 
 const BLANK: CommerceAddress = { Line1: "", City: "", PostalCode: "" };
 
 export default function AccountAddressesPage() {
+  usePageMeta({ title: "Your addresses — Logoipsum", noIndex: true });
   const { customer, saveAddress, removeAddress } = useCommerceCustomer();
   const [draft, setDraft] = useState<CommerceAddress>(BLANK);
   const [busy, setBusy] = useState(false);

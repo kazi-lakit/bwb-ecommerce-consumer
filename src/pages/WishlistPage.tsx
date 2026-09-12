@@ -10,12 +10,14 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { ProductCard } from "@/components/storefront/product-card";
 import { Spinner } from "@/components/ui/spinner";
 import { getProductPrice, getColorSwatchValues } from "@/lib/product-pricing";
+import { usePageMeta } from "@/lib/seo";
 
 function itemId(record: EntityRecord): string {
   return (record.ItemId ?? record.itemId) as string;
 }
 
 export default function WishlistPage() {
+  usePageMeta({ title: "Your wishlist — Logoipsum", noIndex: true });
   const { theme } = useTheme();
   const { productIds } = useWishlist();
 
