@@ -10,6 +10,7 @@ import { HeroBanner } from "@/components/storefront/hero-banner";
 import { ProductRail, type ProductRailItem } from "@/components/storefront/product-rail";
 import { getProductPrice, getColorSwatchValues, isOnSale } from "@/lib/product-pricing";
 import { usePageMeta } from "@/lib/seo";
+import { sortByViewOrder, useRecentlyViewed, whereProductIds } from "@/lib/recently-viewed";
 
 function itemId(record: EntityRecord): string {
   return (record.ItemId ?? record.itemId) as string;
@@ -82,12 +83,27 @@ export default function HomePage() {
 
   const loadingRails = products.isLoading || variants.isLoading;
 
+  // Only fetched when there's a history to fetch — a first-time visitor issues no extra query
+  // and sees no empty rail.
+  const recentIds = useRecentlyViewed();
+  const recentWhere = useMemo(() => whereProductIds(recentIds.slice(0, 8)), [recentIds]);
+  const recentProducts = useEntityList("Product", { pageSize: 8, where: recentWhere }, Boolean(recentWhere));
+  const recentlyViewed = useMemo(
+    () => sortByViewOrder(recentProducts.data?.items ?? [], recentIds, itemId),
+    [recentProducts.data, recentIds]
+  );
+  const recentPlaceholders = useMemo(() => assignPlaceholders(recentlyViewed, theme), [recentlyViewed, theme]);
+
   return (
     <div className="min-h-screen bg-canvas">
       <StorefrontHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <HeroBanner />
+
+        {/* Above the generic rails: someone who's been here before is most likely to be
+            coming back to something specific. Renders nothing on a first visit. */}
+        <ProductRail title="Recently viewed" items={toRailItems(recentlyViewed, recentPlaceholders)} />
 
         <ProductRail title="Popular Chairs" viewAllHref="/products" items={toRailItems(popularChairs, popularPlaceholders)} loading={loadingRails} />
 

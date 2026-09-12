@@ -49,7 +49,9 @@ try {
   const checkout = await server.ssrLoadModule(resolve(here, "scenarios-checkout.ts"));
   const sweep = await server.ssrLoadModule(resolve(here, "scenarios-sweep.ts"));
   const seo = await server.ssrLoadModule(resolve(here, "scenarios-seo.ts"));
-  const failures = (await stock.run()) + (await checkout.run()) + (await sweep.run()) + (await seo.run());
+  const recent = await server.ssrLoadModule(resolve(here, "scenarios-recent.ts"));
+  const failures =
+    (await stock.run()) + (await checkout.run()) + (await sweep.run()) + (await seo.run()) + (await recent.run());
   await server.close();
   process.exit(failures === 0 ? 0 : 1);
 } catch (error) {

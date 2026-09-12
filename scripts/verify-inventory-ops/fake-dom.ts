@@ -82,3 +82,26 @@ export function headTags(): HeadTag[] {
 export function findTag(predicate: (t: HeadTag) => boolean): HeadTag | undefined {
   return headTags().find(predicate);
 }
+
+/**
+ * A localStorage that actually stores, plus one that throws on every call — private-browsing
+ * mode and storage-disabled builds do throw rather than returning null, and code that reads
+ * user state has to survive it.
+ */
+export function installFakeStorage(mode: "working" | "throwing" = "working") {
+  const map = new Map<string, string>();
+  const storage =
+    mode === "working"
+      ? {
+          getItem: (k: string) => map.get(k) ?? null,
+          setItem: (k: string, v: string) => void map.set(k, v),
+          removeItem: (k: string) => void map.delete(k),
+        }
+      : {
+          getItem() { throw new Error("storage disabled"); },
+          setItem() { throw new Error("storage disabled"); },
+          removeItem() { throw new Error("storage disabled"); },
+        };
+  (globalThis as unknown as { localStorage: unknown }).localStorage = storage;
+  return map;
+}

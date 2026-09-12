@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ChevronRight, Heart, Share2, Truck, RotateCcw, Headphones } from "lucide-react";
 import clsx from "clsx";
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getVariantPrice, getProductPrice, formatMoney } from "@/lib/product-pricing";
 import { breadcrumbJsonLd, metaDescription, productJsonLd, usePageMeta } from "@/lib/seo";
+import { recordProductView, sortByViewOrder, useRecentlyViewed, whereProductIds } from "@/lib/recently-viewed";
 
 interface MediaItem {
   MediaId?: string;
@@ -87,6 +88,21 @@ export default function ProductDetailPage() {
     return (categories.data?.items ?? []).find((c) => itemId(c) === firstId)?.Name as string | undefined;
   }, [product, categories.data]);
 
+  const productItemId = product ? itemId(product) : undefined;
+
+  useEffect(() => {
+    if (productItemId) recordProductView(productItemId);
+  }, [productItemId]);
+
+  const recentIds = useRecentlyViewed(productItemId);
+  const recentWhere = useMemo(() => whereProductIds(recentIds.slice(0, 8)), [recentIds]);
+  const recentProducts = useEntityList("Product", { pageSize: 8, where: recentWhere }, Boolean(recentWhere));
+  const recentlyViewed = useMemo(
+    () => sortByViewOrder(recentProducts.data?.items ?? [], recentIds, itemId),
+    [recentProducts.data, recentIds]
+  );
+  const recentPlaceholders = useMemo(() => assignPlaceholders(recentlyViewed, theme), [recentlyViewed, theme]);
+
   const relatedWhere = useMemo(() => {
     if (!product || !Array.isArray(product.CategoryIds) || !product.CategoryIds.length) return undefined;
     return { CategoryIds: { contains: (product.CategoryIds as string[])[0] } };
@@ -120,10 +136,12 @@ export default function ProductDetailPage() {
   }, [variants]);
 
   const relatedItems = related.data?.items ?? otherProducts.data?.items ?? [];
-  const perfectMatch = product ? relatedItems.filter((p) => itemId(p) !== itemId(product)).slice(0, 5) : [];
-  const alsoViewed = product ? relatedItems.filter((p) => itemId(p) !== itemId(product)).slice(5, 10) : [];
-  const perfectMatchPlaceholders = useMemo(() => assignPlaceholders(perfectMatch, theme), [perfectMatch, theme]);
-  const alsoViewedPlaceholders = useMemo(() => assignPlaceholders(alsoViewed, theme), [alsoViewed, theme]);
+  // Was two rails — "Perfect Match with Your Furniture" and "Customer also Viewed these
+  // items" — both fed from this same list, arbitrarily split at index 5. The second was a
+  // claim about other customers' behaviour that nothing in this app tracked. One rail now,
+  // labelled for what it is: other products in the same category.
+  const moreLikeThis = product ? relatedItems.filter((p) => itemId(p) !== itemId(product)).slice(0, 10) : [];
+  const moreLikeThisPlaceholders = useMemo(() => assignPlaceholders(moreLikeThis, theme), [moreLikeThis, theme]);
 
   if (productList.isLoading) {
     return (
@@ -475,11 +493,16 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <ProductRail title="Perfect Match with Your Furniture" items={toRailItems(perfectMatch, perfectMatchPlaceholders)} />
+        <ProductRail
+          title={categoryName ? `More in ${categoryName}` : "More like this"}
+          items={toRailItems(moreLikeThis, moreLikeThisPlaceholders)}
+        />
 
         <PaymentPartnersBar />
 
-        <ProductRail title="Customer also Viewed these items" items={toRailItems(alsoViewed, alsoViewedPlaceholders)} />
+        {/* Real view history now, from this browser's own localStorage — not a claim about
+            what other customers did. Renders nothing on a first visit, which is correct. */}
+        <ProductRail title="Recently viewed" items={toRailItems(recentlyViewed, recentPlaceholders)} />
       </main>
       <StorefrontFooter />
     </div>
