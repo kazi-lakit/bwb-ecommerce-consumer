@@ -77,6 +77,25 @@ explains what it's waiting for. Profile is read-only on purpose — name, email 
 IAM, and deciding which of those a customer may change about themselves isn't a call to make as
 a side effect of building an account page.
 
+## Listing pagination
+
+`/products` uses `useEntityInfiniteList` (in `lib/blocks/hooks.ts`) — pages of 24 that
+**accumulate**, not numbered pages. That's forced by where the filtering happens: facets come
+from embedded `Attributes` arrays the gateway can't filter on, price comes from variants, sort
+has no confirmed input type (see `collections.ts`'s HC0017 note), and the stock filter reads a
+different schema entirely. All of it is client-side, so numbered pages would mean facets
+describing only the page you happen to be on, and a filter hiding most of page 2 while page 3
+sits unexamined.
+
+Accumulating keeps every client-side filter over one growing set, and the footer states
+`loaded` against `totalCount` so the page never implies the catalog is 24 items long. When
+filters match nothing in what's loaded but more pages exist, it says so rather than claiming
+nothing matches.
+
+Variants are fetched scoped to the loaded products (`ProductId: { in: [...] }`) rather than
+the whole catalog — that unbounded fetch, not the product cap, was the real scaling problem
+here.
+
 ## Feature-flagged schema code
 
 Cart/Order/CommerceCustomer (`lib/blocks/commerce.ts`) and the inventory reserve/release path

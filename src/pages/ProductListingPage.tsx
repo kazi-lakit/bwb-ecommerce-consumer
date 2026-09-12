@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { useEntityList } from "@/lib/blocks/hooks";
+import { useEntityInfiniteList, useEntityList } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { assignPlaceholders } from "@/lib/placeholder-images";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -10,6 +10,7 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { ProductCard } from "@/components/storefront/product-card";
 import { PriceRangeSlider } from "@/components/storefront/price-range-slider";
 import { CheckboxFilterGroup, type FilterOption } from "@/components/storefront/checkbox-filter-group";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { getProductPrice, getColorSwatchValues } from "@/lib/product-pricing";
@@ -48,6 +49,10 @@ function productHasAttributeValue(product: EntityRecord, codePattern: RegExp, va
 
 type SortOption = "newest" | "price-asc" | "price-desc";
 
+/** One screenful-ish. Small enough that the first paint is quick, large enough that "load
+ *  more" isn't a treadmill. */
+const PAGE_SIZE = 24;
+
 export default function ProductListingPage() {
   const { theme } = useTheme();
   const [searchParams] = useSearchParams();
@@ -74,8 +79,21 @@ export default function ProductListingPage() {
     return Object.keys(w).length > 0 ? w : undefined;
   }, [categoryId, brandId, search]);
 
-  const products = useEntityList("Product", { pageNo: 1, pageSize: 100, where });
-  const variants = useEntityList("ProductVariant", { pageNo: 1, pageSize: 500 });
+  // Was a single fixed `pageSize: 100` fetch — a silent cap that looked like the whole
+  // catalog. Now pages in and accumulates, so the client-side facets/sort/price/stock filters
+  // below still operate over one growing set rather than over whichever page you landed on.
+  const products = useEntityInfiniteList("Product", { pageSize: PAGE_SIZE, where });
+  const allProducts = products.items;
+
+  // Scoped to the products actually loaded, instead of the old unbounded `pageSize: 500`
+  // fetch of every variant in the catalog — that was the real scaling problem on this page,
+  // not the product cap.
+  const loadedProductIds = useMemo(() => allProducts.map(itemId), [allProducts]);
+  const variants = useEntityList(
+    "ProductVariant",
+    { pageNo: 1, pageSize: Math.max(100, loadedProductIds.length * 6), where: { ProductId: { in: loadedProductIds } } },
+    loadedProductIds.length > 0
+  );
 
   const variantsByProduct = useMemo(() => {
     const map = new Map<string, EntityRecord[]>();
@@ -87,14 +105,15 @@ export default function ProductListingPage() {
     return map;
   }, [variants.data]);
 
-  const allProducts = products.data?.items ?? [];
-
   // Real stock check against WarehouseInventory (see lib/blocks/inventory.ts) — bounded to
   // this page's own variants, not the whole catalog, since the gateway can't aggregate this
   // server-side. `maxRows` raised past the hook's default since a listing page can easily
   // have more variant/warehouse combinations than a single product's detail page does.
   const allVariantIds = useMemo(() => (variants.data?.items ?? []).map(itemId), [variants.data]);
-  const { availability: variantAvailability } = useVariantAvailability(allVariantIds, 500);
+  const { availability: variantAvailability } = useVariantAvailability(
+    allVariantIds,
+    Math.max(200, allVariantIds.length * 3)
+  );
 
   function productInStock(product: EntityRecord): boolean {
     if (product.IsInventoryTracked === false) return true;
@@ -241,7 +260,11 @@ export default function ProductListingPage() {
                 <Spinner className="h-6 w-6" />
               </div>
             ) : filtered.length === 0 ? (
-              <p className="py-20 text-center text-sm text-muted">No products match these filters.</p>
+              <p className="py-20 text-center text-sm text-muted">
+                {products.hasNextPage
+                  ? "Nothing in what's loaded so far matches these filters — try loading more."
+                  : "No products match these filters."}
+              </p>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {filtered.map((product, i) => (
@@ -253,6 +276,29 @@ export default function ProductListingPage() {
                     colors={getColorSwatchValues(variantsByProduct.get(itemId(product)) ?? [])}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Deliberately explicit about what's loaded versus what exists. The filters above
+                run over the loaded set, so "12 of 240" is the difference between "no products
+                match" and "no products match yet" — and the reason this says so rather than
+                quietly implying the catalog is 24 items long, which the old fixed fetch did. */}
+            {!loading && products.totalCount > 0 && (
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <p className="text-xs text-muted">
+                  {hasFilters
+                    ? `${filtered.length} of ${products.loaded} loaded · ${products.totalCount} in total`
+                    : `Showing ${products.loaded} of ${products.totalCount}`}
+                </p>
+                {products.hasNextPage && (
+                  <Button
+                    variant="secondary"
+                    disabled={products.isFetchingNextPage}
+                    onClick={() => void products.fetchNextPage()}
+                  >
+                    {products.isFetchingNextPage ? "Loading…" : "Load more"}
+                  </Button>
+                )}
               </div>
             )}
           </div>
