@@ -60,15 +60,17 @@ function buildOrderNumber(): string {
 }
 
 /**
- * Maps a cart line to the `OrderItem` shape. `CartLine` doesn't carry a `Sku` today (see
- * `cart-provider.tsx`) — falls back to `variantId`/`productId` until the cart line shape is
- * extended to carry the real SKU end to end. Flagged here rather than silently guessed.
+ * Maps a cart line to the `OrderItem` shape.
+ *
+ * `CartLine.sku` carries the variant's real SKU now, captured when the line is added. The
+ * fallback to `variantId`/`productId` stays for carts persisted in localStorage before that
+ * field existed — an order line with no SKU at all would be worse than one carrying an id.
  */
 function toOrderItem(line: CartLine) {
   return {
     ProductId: line.productId,
     VariantId: line.variantId ?? line.productId,
-    Sku: line.variantId ?? line.productId,
+    Sku: line.sku ?? line.variantId ?? line.productId,
     NameSnapshot: line.name,
     UnitPrice: line.unitPrice,
     Quantity: line.quantity,
@@ -153,7 +155,7 @@ function toCartItem(line: CartLine) {
   return {
     ProductId: line.productId,
     VariantId: line.variantId ?? line.productId,
-    Sku: line.variantId ?? line.productId,
+    Sku: line.sku ?? line.variantId ?? line.productId,
     NameSnapshot: line.name,
     Slug: line.slug,
     ImageUrl: line.imageUrl,
@@ -170,6 +172,7 @@ function fromCartItem(item: Record<string, unknown>): CartLine {
     key: variantId ?? productId,
     productId,
     variantId,
+    sku: (item.Sku as string) || undefined,
     slug: (item.Slug as string) ?? "",
     name: (item.NameSnapshot as string) ?? "",
     imageUrl: (item.ImageUrl as string) || undefined,

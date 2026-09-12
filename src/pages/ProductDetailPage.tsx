@@ -171,6 +171,7 @@ export default function ProductDetailPage() {
         key: itemId(selectedVariant),
         productId: itemId(product),
         variantId: itemId(selectedVariant),
+        sku: (selectedVariant.Sku as string) || undefined,
         slug: (product.Slug as string) || itemId(product),
         name,
         imageUrl: primary?.Url,

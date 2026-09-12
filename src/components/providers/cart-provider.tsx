@@ -9,6 +9,12 @@ export interface CartLine {
   key: string;
   productId: string;
   variantId?: string;
+  /**
+   * The variant's real SKU. Optional because carts persisted before this field existed are
+   * still in customers' localStorage and must keep working — the order/reservation/ledger
+   * writers fall back to the variant id when it's absent.
+   */
+  sku?: string;
   slug: string;
   name: string;
   imageUrl?: string;
@@ -38,7 +44,15 @@ function mergeLines(local: CartLine[], remote: CartLine[]): CartLine[] {
   for (const remoteLine of remote) {
     const i = merged.findIndex((l) => l.key === remoteLine.key);
     if (i === -1) merged.push(remoteLine);
-    else merged[i] = { ...merged[i], quantity: merged[i].quantity + remoteLine.quantity };
+    else
+      merged[i] = {
+        ...merged[i],
+        quantity: merged[i].quantity + remoteLine.quantity,
+        // A line saved to localStorage before CartLine carried a SKU has none; the server
+        // copy may. Take it rather than letting the local line's absence win, so the order
+        // and ledger writers get a real SKU instead of falling back to an id.
+        sku: merged[i].sku ?? remoteLine.sku,
+      };
   }
   return merged;
 }

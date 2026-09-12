@@ -13,7 +13,11 @@ function row(id: string, wh: string, v: string, onHand: number, reserved = 0) {
            Quantity: { OnHand: onHand, Reserved: reserved, Damaged: 0, QualityHold: 0, Incoming: 0, Blocked: 0, Backordered: 0, InTransit: 0 } } as never;
 }
 const cart = (variantId: string | undefined, quantity: number, key = variantId ?? "p"): CartLine => ({
-  key, productId: "P1", variantId, slug: "s", name: "Item " + key,
+  key, productId: "P1", variantId, sku: variantId ? "SKU-" + variantId : undefined,
+  slug: "s", name: "Item " + key, unitPrice: 10, currency: "USD", quantity,
+});
+const cartNoSku = (variantId: string, quantity: number): CartLine => ({
+  key: variantId, productId: "P1", variantId, slug: "s", name: "Legacy " + variantId,
   unitPrice: 10, currency: "USD", quantity,
 });
 const actor = { type: "user" as const, id: "U1", name: "Ana" };
@@ -135,6 +139,22 @@ export async function run(): Promise<number> {
   check("no reservation record", store.reservations.length === 0);
   check("stock untouched", store.rows[0].Quantity.Reserved === 0);
   check("no ledger row", store.movements.length === 0);
+
+  console.log("\nC14. the variant SKU reaches the reservation and the ledger");
+  reset([row("B1", "W1", "V1", 10)]);
+  outcome = await holdStockForCheckout([cart("V1", 2)], "CUST1", "ATT10", actor);
+  check("held", outcome.kind === "held");
+  check("reservation line carries the SKU",
+    ((store.reservations[0].Items as never as Record<string, string>[])[0]).Sku === "SKU-V1",
+    JSON.stringify(store.reservations[0].Items));
+  check("movement carries the SKU", store.movements[0].Sku === "SKU-V1", String(store.movements[0].Sku));
+
+  console.log("\nC15. a cart line persisted before SKUs existed still works");
+  reset([row("B1", "W1", "V1", 10)]);
+  outcome = await holdStockForCheckout([cartNoSku("V1", 2)], "CUST1", "ATT11", actor);
+  check("still held", outcome.kind === "held", outcome.kind);
+  check("stock still moved", store.rows[0].Quantity.Reserved === 2);
+  check("no SKU rather than a wrong one", store.movements[0].Sku === undefined, String(store.movements[0].Sku));
 
   console.log(`\n${pass} passed, ${fail} failed`);
   return fail;

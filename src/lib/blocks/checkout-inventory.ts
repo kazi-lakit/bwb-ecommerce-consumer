@@ -132,6 +132,13 @@ export async function allocateCartLines(items: CartLine[]): Promise<AllocationRe
         warehouseId: row.WarehouseId as string,
         variantId,
         productId: item.productId,
+        // Snapshotted onto every reservation line and movement row, so the ledger reads in
+        // SKUs rather than opaque ids. Deliberately *not* falling back to the variant id the
+        // way `toOrderItem` does: an order line with no SKU is worse than one carrying an id,
+        // but a ledger row is something people audit, and a variant id sitting in a column
+        // labelled Sku is a lie the reader has no way to spot. Empty is honest; the row
+        // already carries VariantId.
+        sku: item.sku,
         quantity: take,
       });
       remaining -= take;
