@@ -93,7 +93,7 @@ URL falls back to the baseline Open Graph tags in `index.html`. Fixing that need
 be in the HTML already, i.e. prerendering at build time (compatible with the no-new-backend
 constraint — it's a build step, not a service) or SSR. Tracked as a follow-up, not half-done.
 
-Verified by the `seo` suite in `npm run verify:inventory`, which runs the real module against
+Verified by the `seo` suite in `npm run verify`, which runs the real module against
 a minimal fake document.
 
 ## Listing pagination
@@ -139,5 +139,5 @@ VITE_COMMERCE_SCHEMAS_LIVE=true VITE_INVENTORY_WRITES_LIVE=true npm run build
 And to exercise the inventory logic against a simulated Data Gateway:
 
 ```bash
-npm run verify:inventory
+npm run verify
 ```

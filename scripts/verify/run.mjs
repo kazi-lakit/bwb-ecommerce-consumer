@@ -4,7 +4,7 @@
  * checkout hold/release flow built on them) `src/lib/blocks/reservation-sweep.ts` (lazy
  * expiry) and `src/lib/seo.ts` (per-page document metadata, against a minimal fake document) against a simulated Data Gateway.
  *
- *     npm run verify:inventory
+ *     npm run verify
  *
  * Why this exists as a script rather than a test suite: neither app has a test runner, and
  * adding one is a choice for the repo owner to make, not a side effect of writing this
