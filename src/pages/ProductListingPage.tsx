@@ -52,6 +52,7 @@ export default function ProductListingPage() {
   const { theme } = useTheme();
   const [searchParams] = useSearchParams();
   const categoryId = searchParams.get("category") ?? "";
+  const brandId = searchParams.get("brand") ?? "";
   const search = searchParams.get("q") ?? "";
 
   const [fabricColor, setFabricColor] = useState<string[]>([]);
@@ -68,9 +69,10 @@ export default function ProductListingPage() {
   const where = useMemo(() => {
     const w: Record<string, unknown> = {};
     if (categoryId) w.CategoryIds = { contains: categoryId };
+    if (brandId) w.BrandId = { eq: brandId };
     if (search) w.or = [{ Name: { contains: search } }, { ShortDescription: { contains: search } }];
     return Object.keys(w).length > 0 ? w : undefined;
-  }, [categoryId, search]);
+  }, [categoryId, brandId, search]);
 
   const products = useEntityList("Product", { pageNo: 1, pageSize: 100, where });
   const variants = useEntityList("ProductVariant", { pageNo: 1, pageSize: 500 });

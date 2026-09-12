@@ -50,8 +50,10 @@ Public by default; `/checkout` and everything under `/account` require a session
 
 ```
 /                         HomePage                  hero, category rails, "pick your category"
-/products                 ProductListingPage        filterable/sortable grid
+/products                 ProductListingPage        filterable/sortable grid; ?category=, ?brand=, ?q=
 /product/:slug            ProductDetailPage
+/brands                   BrandListingPage
+/brand/:slug              BrandDetailPage
 /cart                     CartPage
 /checkout                 CheckoutPage              auth-gated
 /order-confirmation       OrderConfirmationPage

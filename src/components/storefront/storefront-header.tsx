@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Search, ShoppingBag, User, ChevronDown, Menu, X } from "lucide-react";
 import clsx from "clsx";
 import { useEntityList } from "@/lib/blocks/hooks";
@@ -18,6 +18,7 @@ function itemId(record: Record<string, unknown>): string {
 
 export function StorefrontHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { status, user, logout } = useAuth();
   const { count: cartCount } = useCart();
@@ -88,6 +89,17 @@ export function StorefrontHeader() {
                 );
               }
             )}
+            {/* Last, after the categories: browsing by brand is a secondary way in, and the
+                category nav is what most people arrive looking for. */}
+            <Link
+              to="/brands"
+              className={clsx(
+                "flex-none whitespace-nowrap text-xs font-medium tracking-[0.03em] transition-colors hover:text-ink hover:underline hover:underline-offset-4",
+                location.pathname.startsWith("/brand") ? "text-ink" : "text-steel"
+              )}
+            >
+              BRANDS
+            </Link>
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">

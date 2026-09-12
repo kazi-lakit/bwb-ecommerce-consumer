@@ -75,6 +75,11 @@ export default function ProductDetailPage() {
   const variants = variantList.data?.items ?? [];
 
   const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });
+  // One extra query only when the product actually has a brand — most of the catalog does,
+  // but a product without one shouldn't pay for the lookup.
+  const brandId = product?.BrandId as string | undefined;
+  const brandList = useEntityList("Brand", { pageSize: 1, where: { ItemId: { eq: brandId } } }, Boolean(brandId));
+  const brand = brandList.data?.items?.[0];
   const categoryName = useMemo(() => {
     if (!product || !Array.isArray(product.CategoryIds)) return null;
     const firstId = (product.CategoryIds as string[])[0];
@@ -239,6 +244,14 @@ export default function ProductDetailPage() {
               <div>
                 {selectedVariant?.Sku ? <p className="text-xs font-medium text-muted">{selectedVariant.Sku as string}</p> : null}
                 <h1 className="font-display mt-1 text-[28px] text-ink">{name}</h1>
+                {brand ? (
+                  <Link
+                    to={`/brand/${(brand.Slug as string) || ((brand.ItemId ?? brand.itemId) as string)}`}
+                    className="mt-1 inline-block text-sm text-brand-accent hover:underline"
+                  >
+                    {brand.Name as string}
+                  </Link>
+                ) : null}
               </div>
               <div className="flex gap-1.5">
                 <button

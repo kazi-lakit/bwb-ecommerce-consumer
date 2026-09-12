@@ -7,6 +7,8 @@ import CartPage from "@/pages/CartPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import OrderConfirmationPage from "@/pages/OrderConfirmationPage";
 import WishlistPage from "@/pages/WishlistPage";
+import BrandListingPage from "@/pages/BrandListingPage";
+import BrandDetailPage from "@/pages/BrandDetailPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import AccountOrdersPage from "@/pages/AccountOrdersPage";
 import AccountOrderDetailPage from "@/pages/AccountOrderDetailPage";
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductListingPage />} />
           <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path="/brands" element={<BrandListingPage />} />
+          <Route path="/brand/:slug" element={<BrandDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
