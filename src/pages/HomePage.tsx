@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useEntityList } from "@/lib/blocks/hooks";
+import { useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { assignPlaceholders } from "@/lib/placeholder-images";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -24,9 +24,23 @@ export default function HomePage() {
   });
   const { theme } = useTheme();
 
-  const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });
-  const products = useEntityList("Product", { pageNo: 1, pageSize: 200 });
-  const variants = useEntityList("ProductVariant", { pageNo: 1, pageSize: 500 });
+  // Only fetched when there's a history to fetch — a first-time visitor issues no extra query
+  // and sees no empty rail. Declared before the batch below so it can join the same request.
+  const recentIds = useRecentlyViewed();
+  const recentWhere = useMemo(() => whereProductIds(recentIds.slice(0, 8)), [recentIds]);
+
+  // Four independent reads (none needs another's result) in one round trip instead of four —
+  // see `useEntityListBatch` / `collections.ts`'s `runBatchList`.
+  const batch = useEntityListBatch([
+    { key: "categories", schemaName: "Category", params: { pageNo: 1, pageSize: 100 } },
+    { key: "products", schemaName: "Product", params: { pageNo: 1, pageSize: 200 } },
+    { key: "variants", schemaName: "ProductVariant", params: { pageNo: 1, pageSize: 500 } },
+    { key: "recentProducts", schemaName: "Product", params: { pageSize: 8, where: recentWhere }, enabled: Boolean(recentWhere) },
+  ]);
+  const categories = { data: batch.data?.categories, isLoading: batch.isLoading };
+  const products = { data: batch.data?.products, isLoading: batch.isLoading };
+  const variants = { data: batch.data?.variants, isLoading: batch.isLoading };
+  const recentProducts = { data: batch.data?.recentProducts, isLoading: batch.isLoading };
 
   const variantsByProduct = useMemo(() => {
     const map = new Map<string, EntityRecord[]>();
@@ -83,11 +97,6 @@ export default function HomePage() {
 
   const loadingRails = products.isLoading || variants.isLoading;
 
-  // Only fetched when there's a history to fetch — a first-time visitor issues no extra query
-  // and sees no empty rail.
-  const recentIds = useRecentlyViewed();
-  const recentWhere = useMemo(() => whereProductIds(recentIds.slice(0, 8)), [recentIds]);
-  const recentProducts = useEntityList("Product", { pageSize: 8, where: recentWhere }, Boolean(recentWhere));
   const recentlyViewed = useMemo(
     () => sortByViewOrder(recentProducts.data?.items ?? [], recentIds, itemId),
     [recentProducts.data, recentIds]

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useEntityList } from "./hooks";
+import { useEntityList, useEntityListBatch } from "./hooks";
+import type { EntityRecord } from "./collections";
 
 /**
  * Reads real stock levels from `WarehouseInventory` — a live Data Gateway schema today
@@ -32,6 +33,21 @@ export interface VariantAvailability {
  * request; there's no way to ask the gateway to aggregate server-side instead (see the
  * module doc comment above).
  */
+/** Shared by `useVariantAvailability` and `useCartStock` so the aggregation logic (sum
+ * `AvailableToSell` per variant across every warehouse row) lives in one place regardless
+ * of whether the `WarehouseInventory` rows came from a standalone query or a batched one. */
+function aggregateByVariant(rows: EntityRecord[]): Map<string, VariantAvailability> {
+  const map = new Map<string, VariantAvailability>();
+  for (const row of rows) {
+    const variantId = row.VariantId as string | undefined;
+    if (!variantId) continue;
+    const available = (row.AvailableToSell as number) ?? 0;
+    const existing = map.get(variantId);
+    map.set(variantId, { totalAvailable: (existing?.totalAvailable ?? 0) + available, isTracked: true });
+  }
+  return map;
+}
+
 export function useVariantAvailability(variantIds: string[], maxRows: number = DEFAULT_MAX_ROWS) {
   const ids = useMemo(() => Array.from(new Set(variantIds.filter(Boolean))), [variantIds]);
   const query = useEntityList(
@@ -40,17 +56,7 @@ export function useVariantAvailability(variantIds: string[], maxRows: number = D
     ids.length > 0
   );
 
-  const byVariant = useMemo(() => {
-    const map = new Map<string, VariantAvailability>();
-    for (const row of query.data?.items ?? []) {
-      const variantId = row.VariantId as string | undefined;
-      if (!variantId) continue;
-      const available = (row.AvailableToSell as number) ?? 0;
-      const existing = map.get(variantId);
-      map.set(variantId, { totalAvailable: (existing?.totalAvailable ?? 0) + available, isTracked: true });
-    }
-    return map;
-  }, [query.data]);
+  const byVariant = useMemo(() => aggregateByVariant(query.data?.items ?? []), [query.data]);
 
   return { availability: byVariant, isLoading: query.isLoading };
 }
@@ -105,12 +111,17 @@ export function useCartStock(items: StockCheckLine[]) {
     [items]
   );
 
-  const { availability, isLoading: stockLoading } = useVariantAvailability(variantIds);
-  const variants = useEntityList(
-    "ProductVariant",
-    { where: { ProductId: { in: productIds } }, pageSize: DEFAULT_MAX_ROWS },
-    productIds.length > 0
-  );
+  // `WarehouseInventory` (by variant) and `ProductVariant` (by product) are independent of
+  // each other — neither needs the other's result — so one round trip instead of two.
+  // (Not routed through `useVariantAvailability` itself, since that hook is also used
+  // standalone elsewhere and shouldn't always pull in a `ProductVariant` fetch alongside it.)
+  const stockBatch = useEntityListBatch([
+    { key: "inventory", schemaName: "WarehouseInventory", params: { where: { VariantId: { in: variantIds } }, pageSize: DEFAULT_MAX_ROWS }, enabled: variantIds.length > 0 },
+    { key: "variants", schemaName: "ProductVariant", params: { where: { ProductId: { in: productIds } }, pageSize: DEFAULT_MAX_ROWS }, enabled: productIds.length > 0 },
+  ]);
+  const stockLoading = stockBatch.isLoading;
+  const availability = useMemo(() => aggregateByVariant(stockBatch.data?.inventory?.items ?? []), [stockBatch.data]);
+  const variants = { data: stockBatch.data?.variants, isLoading: stockBatch.isLoading };
 
   const flagsByVariant = useMemo(() => {
     const map = new Map<string, { tracked: boolean; backorder: boolean }>();

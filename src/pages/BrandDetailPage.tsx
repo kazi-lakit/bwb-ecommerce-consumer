@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { useEntityList } from "@/lib/blocks/hooks";
+import { useEntityList, useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { assignPlaceholders } from "@/lib/placeholder-images";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -27,12 +27,14 @@ export default function BrandDetailPage() {
   const brand = brands.data?.items?.[0];
   const brandId = brand ? itemId(brand) : undefined;
 
-  const products = useEntityList(
-    "Product",
-    { pageNo: 1, pageSize: 100, where: { BrandId: { eq: brandId } } },
-    Boolean(brandId)
-  );
-  const variants = useEntityList("ProductVariant", { pageNo: 1, pageSize: 500 }, Boolean(brandId));
+  // Both only need `brandId` to know *when* to fire (variants isn't even scoped by it) —
+  // neither needs the other's result, so one round trip instead of two once it's known.
+  const productsBatch = useEntityListBatch([
+    { key: "products", schemaName: "Product", params: { pageNo: 1, pageSize: 100, where: { BrandId: { eq: brandId } } }, enabled: Boolean(brandId) },
+    { key: "variants", schemaName: "ProductVariant", params: { pageNo: 1, pageSize: 500 }, enabled: Boolean(brandId) },
+  ]);
+  const products = { data: productsBatch.data?.products, isLoading: productsBatch.isLoading };
+  const variants = { data: productsBatch.data?.variants };
 
   const items = products.data?.items ?? [];
   const placeholders = useMemo(() => assignPlaceholders(items, theme), [items, theme]);

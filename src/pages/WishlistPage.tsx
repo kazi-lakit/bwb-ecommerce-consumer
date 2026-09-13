@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useEntityList } from "@/lib/blocks/hooks";
+import { useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { useWishlist } from "@/components/providers/wishlist-provider";
 import { assignPlaceholders } from "@/lib/placeholder-images";
@@ -21,8 +21,13 @@ export default function WishlistPage() {
   const { theme } = useTheme();
   const { productIds } = useWishlist();
 
-  const products = useEntityList("Product", { pageSize: 200 });
-  const variants = useEntityList("ProductVariant", { pageSize: 500 });
+  // Independent reads, one round trip instead of two — see `useEntityListBatch`.
+  const batch = useEntityListBatch([
+    { key: "products", schemaName: "Product", params: { pageSize: 200 } },
+    { key: "variants", schemaName: "ProductVariant", params: { pageSize: 500 } },
+  ]);
+  const products = { data: batch.data?.products, isLoading: batch.isLoading };
+  const variants = { data: batch.data?.variants, isLoading: batch.isLoading };
 
   const variantsByProduct = useMemo(() => {
     const map = new Map<string, EntityRecord[]>();

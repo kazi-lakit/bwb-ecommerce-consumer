@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ChevronRight, Heart, Share2, Truck, RotateCcw, Headphones } from "lucide-react";
 import clsx from "clsx";
-import { useEntityList } from "@/lib/blocks/hooks";
+import { useEntityList, useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { getPrimaryImage } from "@/lib/blocks/media";
 import { useSingleVariantAvailability } from "@/lib/blocks/inventory";
@@ -66,7 +66,16 @@ export default function ProductDetailPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  const productList = useEntityList("Product", { where: { Slug: { eq: slug } }, pageSize: 1 }, Boolean(slug));
+  // `productList` and `categories` are independent of each other (and stable once fetched
+  // for a given slug) — one round trip instead of two. `recentProducts` below stays a
+  // separate query: its params depend on this page's own product (via `useRecentlyViewed`
+  // recording the current view), so bundling it here would force `productList`/`categories`
+  // to refetch every time that changes, which they otherwise never would.
+  const detailBatch = useEntityListBatch([
+    { key: "product", schemaName: "Product", params: { where: { Slug: { eq: slug } }, pageSize: 1 }, enabled: Boolean(slug) },
+    { key: "categories", schemaName: "Category", params: { pageNo: 1, pageSize: 100 } },
+  ]);
+  const productList = { data: detailBatch.data?.product, isLoading: detailBatch.isLoading };
   const product = productList.data?.items[0];
   const productId = product ? itemId(product) : undefined;
 
@@ -77,7 +86,7 @@ export default function ProductDetailPage() {
   );
   const variants = variantList.data?.items ?? [];
 
-  const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });
+  const categories = { data: detailBatch.data?.categories };
   // One extra query only when the product actually has a brand — most of the catalog does,
   // but a product without one shouldn't pay for the lookup.
   const brandId = product?.BrandId as string | undefined;
