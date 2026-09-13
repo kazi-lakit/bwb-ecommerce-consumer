@@ -14,7 +14,9 @@
     "set-env": "node set-env.cjs",
     "preview": "vite preview",
     "lint": "eslint .",
-    "verify": "node scripts/verify/run.mjs"
+    "verify": "node scripts/verify/run.mjs",
+    "prerender": "node scripts/prerender/run.mjs",
+    "build:seo": "npm run build && npm run prerender"
   },
   "dependencies": {
     "@seliseblocks/client": "^0.1.6",

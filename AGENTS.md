@@ -96,6 +96,25 @@ constraint — it's a build step, not a service) or SSR. Tracked as a follow-up,
 Verified by the `seo` suite in `npm run verify`, which runs the real module against
 a minimal fake document.
 
+### Prerendering (the fix for the scraper problem)
+
+`npm run build:seo` (= `build` then `prerender`) writes a real HTML file per public route with
+that route's metadata already in the markup, plus `sitemap.xml` and `robots.txt`. That's what
+makes shared product links preview correctly — the runtime tags above never reach a scraper.
+
+It needs the Data Gateway at build time, using the same `VITE_BLOCKS_*` config the app builds
+with, plus `VITE_SITE_ORIGIN` for canonical URLs. Catalog reads are Public so no session is
+needed. **It fails loudly** — an empty catalog or a missing origin aborts rather than emitting
+a site with no product pages, because that deploy would look fine while every shared link
+stayed broken.
+
+**Hosting matters here.** These are real files at real paths, so the host must serve
+`/product/oak-chair` from `product/oak-chair/index.html` *before* any SPA catch-all rewrite. A
+catch-all that runs first serves the generic `index.html` and undoes the whole step.
+
+`scripts/prerender/head.mjs` holds the pure part (head building, injection, sitemap) and is
+covered by the `prerender` suite in `npm run verify`.
+
 ## Listing pagination
 
 `/products` uses `useEntityInfiniteList` (in `lib/blocks/hooks.ts`) — pages of 24 that
