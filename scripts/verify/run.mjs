@@ -57,9 +57,11 @@ try {
   const prerender = await server.ssrLoadModule(resolve(here, "scenarios-prerender.ts"));
   const coupons = await server.ssrLoadModule(resolve(here, "scenarios-coupons.ts"));
   const reviews = await server.ssrLoadModule(resolve(here, "scenarios-reviews.ts"));
+  const favourites = await server.ssrLoadModule(resolve(here, "scenarios-favourites.ts"));
   const failures =
     (await stock.run()) + (await checkout.run()) + (await sweep.run()) + (await seo.run()) +
-    (await recent.run()) + (await prerender.run()) + (await coupons.run()) + (await reviews.run());
+    (await recent.run()) + (await prerender.run()) + (await coupons.run()) + (await reviews.run()) +
+    (await favourites.run());
   await server.close();
   process.exit(failures === 0 ? 0 : 1);
 } catch (error) {
