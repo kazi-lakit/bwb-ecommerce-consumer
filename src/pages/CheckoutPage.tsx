@@ -81,6 +81,7 @@ export default function CheckoutPage() {
   const [agreed, setAgreed] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponResult | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
   const [placing, setPlacing] = useState(false);
   // Generated once per mount and reused across retries of the same checkout attempt, so a
   // resubmit after a failed/slow request can't place the order twice once IdempotencyKey
@@ -182,7 +183,10 @@ export default function CheckoutPage() {
 
   function applyCoupon() {
     if (!couponInput.trim()) return;
-    setCoupon(validateCoupon(couponInput, subtotal));
+    setCouponChecking(true);
+    void validateCoupon(couponInput, subtotal)
+      .then(setCoupon)
+      .finally(() => setCouponChecking(false));
   }
 
   async function placeOrder() {
@@ -454,7 +458,7 @@ export default function CheckoutPage() {
                   className="h-10 flex-1 rounded-md border border-hairline bg-canvas px-3 text-sm text-ink outline-none focus:border-brand-accent"
                 />
                 <Button size="sm" variant="secondary" onClick={applyCoupon}>
-                  Apply
+                  {couponChecking ? "Checking…" : "Apply"}
                 </Button>
               </div>
               {coupon && (

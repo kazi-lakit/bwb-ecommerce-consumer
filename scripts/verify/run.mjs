@@ -38,9 +38,12 @@ const server = await createServer({
   resolve: {
     alias: [
       { find: "@", replacement: resolve(root, "src") },
-      // Relative specifiers, so these only bite inside the blocks/ modules this graph loads.
+      // Relative specifiers, so these only bite inside the modules this graph loads.
+      // Both spellings: `./client` from inside src/lib/blocks, `./blocks/client` from src/lib.
       { find: /^\.\/client$/, replacement: resolve(here, "fake-client.ts") },
       { find: /^\.\/http$/, replacement: resolve(here, "fake-http.ts") },
+      { find: /^\.\/blocks\/client$/, replacement: resolve(here, "fake-client.ts") },
+      { find: /^\.\/blocks\/http$/, replacement: resolve(here, "fake-http.ts") },
     ],
   },
 });
@@ -52,9 +55,10 @@ try {
   const seo = await server.ssrLoadModule(resolve(here, "scenarios-seo.ts"));
   const recent = await server.ssrLoadModule(resolve(here, "scenarios-recent.ts"));
   const prerender = await server.ssrLoadModule(resolve(here, "scenarios-prerender.ts"));
+  const coupons = await server.ssrLoadModule(resolve(here, "scenarios-coupons.ts"));
   const failures =
     (await stock.run()) + (await checkout.run()) + (await sweep.run()) + (await seo.run()) +
-    (await recent.run()) + (await prerender.run());
+    (await recent.run()) + (await prerender.run()) + (await coupons.run());
   await server.close();
   process.exit(failures === 0 ? 0 : 1);
 } catch (error) {

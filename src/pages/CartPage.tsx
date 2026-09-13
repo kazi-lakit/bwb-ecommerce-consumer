@@ -26,6 +26,7 @@ export default function CartPage() {
   const { items, updateQuantity, remove, subtotal } = useCart();
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponResult | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
   const cartPlaceholders = useMemo(() => assignPlaceholders(items, theme), [items, theme]);
   // A cart line records a price and a quantity, not a stock position — six in the cart stays
   // six long after someone else buys the last four. Re-read availability here so the stepper
@@ -48,7 +49,10 @@ export default function CartPage() {
 
   function applyCoupon() {
     if (!couponInput.trim()) return;
-    setCoupon(validateCoupon(couponInput, subtotal));
+    setCouponChecking(true);
+    void validateCoupon(couponInput, subtotal)
+      .then(setCoupon)
+      .finally(() => setCouponChecking(false));
   }
 
   return (
@@ -132,7 +136,7 @@ export default function CartPage() {
                     className="h-10 flex-1 rounded-md border border-hairline bg-canvas px-3 text-sm text-ink outline-none focus:border-brand-accent"
                   />
                   <Button size="sm" variant="secondary" onClick={applyCoupon}>
-                    Apply
+                    {couponChecking ? "Checking…" : "Apply"}
                   </Button>
                 </div>
                 {coupon && (
