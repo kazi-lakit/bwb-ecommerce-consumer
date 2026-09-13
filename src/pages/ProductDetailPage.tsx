@@ -22,6 +22,7 @@ import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getVariantPrice, getProductPrice, formatMoney } from "@/lib/product-pricing";
 import { breadcrumbJsonLd, metaDescription, productJsonLd, usePageMeta } from "@/lib/seo";
 import { recordProductView, sortByViewOrder, useRecentlyViewed, whereProductIds } from "@/lib/recently-viewed";
+import { ProductReviews } from "@/components/storefront/product-reviews";
 
 interface MediaItem {
   MediaId?: string;
@@ -492,6 +493,8 @@ export default function ProductDetailPage() {
             <p className="mt-1 text-xs text-muted">We're here to help before and after you buy.</p>
           </div>
         </div>
+
+        {product ? <ProductReviews productId={itemId(product)} variantId={selectedVariant ? itemId(selectedVariant) : undefined} /> : null}
 
         <ProductRail
           title={categoryName ? `More in ${categoryName}` : "More like this"}
