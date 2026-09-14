@@ -14,7 +14,7 @@ const TEMPLATE = `<!doctype html>
     <meta charset="UTF-8" />
     <meta name="description" content="Baseline description." />
     <title>Baseline title</title>
-    <meta property="og:site_name" content="Logoipsum" />
+    <meta property="og:site_name" content="Cartio" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Baseline title" />
     <meta property="og:description" content="Baseline description." />
@@ -28,16 +28,16 @@ export async function run(): Promise<number> {
 
   console.log("\nP1. a page's own metadata ends up in the markup");
   const block = buildHead({
-    title: "Oak Chair — Logoipsum",
+    title: "Oak Chair — Cartio",
     description: "A chair.",
     canonical: "https://shop.test/product/oak-chair",
     image: "https://cdn.test/c.jpg",
     type: "product",
   });
   const html = injectHead(TEMPLATE, block);
-  check("title present", html.includes("<title>Oak Chair — Logoipsum</title>"), block);
+  check("title present", html.includes("<title>Oak Chair — Cartio</title>"), block);
   check("canonical present", html.includes('rel="canonical" href="https://shop.test/product/oak-chair"'));
-  check("og:title present", html.includes('property="og:title" content="Oak Chair — Logoipsum"'));
+  check("og:title present", html.includes('property="og:title" content="Oak Chair — Cartio"'));
   check("og:image present", html.includes('property="og:image"'));
   check("large card with an image", html.includes('content="summary_large_image"'));
 
@@ -52,7 +52,7 @@ export async function run(): Promise<number> {
   check("app root kept", html.includes('id="root"'));
 
   console.log("\nP3. running it twice changes nothing further");
-  const twice = injectHead(html, buildHead({ title: "Oak Chair — Logoipsum", description: "A chair.", canonical: "https://shop.test/product/oak-chair", image: "https://cdn.test/c.jpg", type: "product" }));
+  const twice = injectHead(html, buildHead({ title: "Oak Chair — Cartio", description: "A chair.", canonical: "https://shop.test/product/oak-chair", image: "https://cdn.test/c.jpg", type: "product" }));
   check("idempotent", twice === html, "second pass differed");
   const changed = injectHead(html, buildHead({ title: "Different", canonical: "https://shop.test/x" }));
   check("still replaces on change", changed.includes("<title>Different</title>") && !changed.includes("Oak Chair"));

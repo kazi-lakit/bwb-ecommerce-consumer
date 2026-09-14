@@ -60,11 +60,12 @@ export function StorefrontHeader() {
             >
               {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand-accent text-on-primary">
-                <ShoppingBag size={16} strokeWidth={2.2} />
-              </div>
-              <span className="font-display text-lg text-ink">Logoipsum</span>
+            <Link to="/" aria-label="Cartio home" className="flex items-center">
+              <img
+                src="/cartio-logo.png"
+                alt="Cartio"
+                className="h-10 w-auto rounded-sm bg-[#f7fafc] px-1.5 py-1"
+              />
             </Link>
           </div>
 
@@ -184,7 +185,7 @@ export function StorefrontHeader() {
                 <Button size="sm" variant="secondary" onClick={() => void startLogin()}>
                   Log in
                 </Button>
-                <Button size="sm" onClick={() => void startLogin()}>
+                <Button size="sm" onClick={() => navigate("/create-account")}>
                   Create Account
                 </Button>
               </div>

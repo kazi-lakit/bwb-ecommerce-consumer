@@ -20,7 +20,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 }
 
 export default function AccountOrderDetailPage() {
-  usePageMeta({ title: "Order — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Order — Cartio", noIndex: true });
   const { orderId } = useParams();
   const { user } = useAuth();
 

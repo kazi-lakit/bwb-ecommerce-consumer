@@ -10,6 +10,7 @@ import WishlistPage from "@/pages/WishlistPage";
 import BrandListingPage from "@/pages/BrandListingPage";
 import BrandDetailPage from "@/pages/BrandDetailPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
+import CreateAccountPage from "@/pages/CreateAccountPage";
 import AccountOrdersPage from "@/pages/AccountOrdersPage";
 import AccountOrderDetailPage from "@/pages/AccountOrderDetailPage";
 import AccountAddressesPage from "@/pages/AccountAddressesPage";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login/callback" element={<AuthCallbackPage />} />
+          <Route path="/create-account" element={<CreateAccountPage />} />
           {/* Everything under /account is the customer's own data, so it's gated — unlike the
               rest of the storefront, which is deliberately public. /account itself redirects
               to Orders rather than being a separate dashboard with nothing on it. */}

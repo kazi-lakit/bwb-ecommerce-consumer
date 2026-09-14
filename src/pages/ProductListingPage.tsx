@@ -212,9 +212,9 @@ export default function ProductListingPage() {
   const heading = (category?.Name as string) || (search ? `Results for "${search}"` : "All Products");
 
   usePageMeta({
-    title: `${heading} — Logoipsum`,
+    title: `${heading} — Cartio`,
     description: category?.Name
-      ? `Browse ${category.Name as string} at Logoipsum.`
+      ? `Browse ${category.Name as string} at Cartio.`
       : "Browse everything we stock — furniture and home decor.",
     // Canonical drops the query string on purpose: /products?q=sofa and /products?q=couch are
     // the same page of the same catalog as far as search is concerned, and letting each

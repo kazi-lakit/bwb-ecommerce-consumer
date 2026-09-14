@@ -58,7 +58,7 @@ function AccordionSection({
 }
 
 export default function CheckoutPage() {
-  usePageMeta({ title: "Checkout — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Checkout — Cartio", noIndex: true });
   const navigate = useNavigate();
   const { status, user } = useAuth();
   const { items, subtotal, clear } = useCart();

@@ -14,7 +14,7 @@ function Field({ label, value }: { label: string; value?: string }) {
 }
 
 export default function AccountProfilePage() {
-  usePageMeta({ title: "Your profile — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Your profile — Cartio", noIndex: true });
   const { user, logout } = useAuth();
   const { customer } = useCommerceCustomer();
 

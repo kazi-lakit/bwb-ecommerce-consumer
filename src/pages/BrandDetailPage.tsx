@@ -52,8 +52,8 @@ export default function BrandDetailPage() {
   const name = (brand?.Name as string) || "Brand";
 
   usePageMeta({
-    title: brand ? `${name} — Logoipsum` : "Brands — Logoipsum",
-    description: metaDescription(brand?.Description as string, `Shop ${name} at Logoipsum.`),
+    title: brand ? `${name} — Cartio` : "Brands — Cartio",
+    description: metaDescription(brand?.Description as string, `Shop ${name} at Cartio.`),
     canonicalPath: `/brand/${(brand?.Slug as string) || slug || ""}`,
     image: (brand?.LogoUrl as string) || undefined,
   });

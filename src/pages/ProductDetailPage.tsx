@@ -168,10 +168,10 @@ export default function ProductDetailPage() {
       const canonical = `/product/${(product?.Slug as string) || slug || ""}`;
       const image = primary?.Url as string | undefined;
       return {
-        title: product ? `${productName} — Logoipsum` : "Logoipsum",
+        title: product ? `${productName} — Cartio` : "Cartio",
         description: metaDescription(
           (product?.ShortDescription as string) || (product?.LongDescription as string),
-          `Buy ${productName} at Logoipsum.`
+          `Buy ${productName} at Cartio.`
         ),
         canonicalPath: canonical,
         image,

@@ -18,7 +18,7 @@ function itemId(record: EntityRecord): string {
 
 export default function HomePage() {
   usePageMeta({
-    title: "Logoipsum — Decorate your Space with Us",
+    title: "Cartio — Decorate your Space with Us",
     description: "Furniture and home decor, chosen well. Browse by room, brand or style.",
     canonicalPath: "/",
   });

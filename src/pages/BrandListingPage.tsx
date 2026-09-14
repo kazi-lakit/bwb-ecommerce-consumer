@@ -18,7 +18,7 @@ function itemId(record: EntityRecord): string {
  */
 export default function BrandListingPage() {
   usePageMeta({
-    title: "Brands — Logoipsum",
+    title: "Brands — Cartio",
     description: "Every brand we stock, in one place.",
     canonicalPath: "/brands",
   });

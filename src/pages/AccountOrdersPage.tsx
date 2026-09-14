@@ -26,7 +26,7 @@ export function OrderStatusLine({ order }: { order: AccountOrder }) {
 }
 
 export default function AccountOrdersPage() {
-  usePageMeta({ title: "Your orders — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Your orders — Cartio", noIndex: true });
   const { user } = useAuth();
   const [pageNo, setPageNo] = useState(1);
 

@@ -16,7 +16,7 @@ interface ConfirmationState {
 }
 
 export default function OrderConfirmationPage() {
-  usePageMeta({ title: "Order confirmed — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Order confirmed — Cartio", noIndex: true });
   const location = useLocation();
   const state = location.state as ConfirmationState | null;
 

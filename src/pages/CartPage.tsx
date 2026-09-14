@@ -20,7 +20,7 @@ import { usePageMeta } from "@/lib/seo";
 const DELIVERY_CHARGE = 120;
 
 export default function CartPage() {
-  usePageMeta({ title: "Your cart — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Your cart — Cartio", noIndex: true });
   const { theme } = useTheme();
   const navigate = useNavigate();
   const { items, updateQuantity, remove, subtotal } = useCart();

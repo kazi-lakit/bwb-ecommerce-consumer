@@ -15,17 +15,17 @@ export async function run(): Promise<number> {
   console.log("\nM1. a page sets title, canonical, description and Open Graph");
   installFakeDocument();
   let undo = applyPageMeta({
-    title: "Oak Chair — Logoipsum",
+    title: "Oak Chair — Cartio",
     description: "A chair.",
     canonicalPath: "/product/oak-chair",
     image: "https://cdn.test/chair.jpg",
     type: "product",
   });
-  check("title set", fakeDocument.title === "Oak Chair — Logoipsum", fakeDocument.title);
+  check("title set", fakeDocument.title === "Oak Chair — Cartio", fakeDocument.title);
   check("canonical absolute", findTag((t) => t.rel === "canonical")?.href === "https://shop.test/product/oak-chair",
     JSON.stringify(findTag((t) => t.rel === "canonical")));
   check("description set", findTag((t) => t.name === "description")?.content === "A chair.");
-  check("og:title set", findTag((t) => t.property === "og:title")?.content === "Oak Chair — Logoipsum");
+  check("og:title set", findTag((t) => t.property === "og:title")?.content === "Oak Chair — Cartio");
   check("og:type carried", findTag((t) => t.property === "og:type")?.content === "product");
   check("og:url matches canonical", findTag((t) => t.property === "og:url")?.content === "https://shop.test/product/oak-chair");
   check("large twitter card when there's an image",

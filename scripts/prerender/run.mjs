@@ -106,7 +106,7 @@ async function main() {
   for (const owned of ["product", "brand", "products", "brands"]) {
     rmSync(join(dist, owned), { recursive: true, force: true });
   }
-  const siteName = "Logoipsum";
+  const siteName = "Cartio";
 
   const [products, brands] = await Promise.all([fetchAll(PRODUCTS, "getProducts"), fetchAll(BRANDS, "getBrands")]);
   if (products.length === 0) {

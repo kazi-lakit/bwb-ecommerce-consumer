@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ShoppingBag } from "lucide-react";
 import { toast } from "@/lib/toast-store";
 
 const COLUMNS: { title: string; links: string[] }[] = [
@@ -24,10 +23,8 @@ export function StorefrontFooter() {
       <div className="mx-auto grid grid-cols-2 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-5">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-on-dark text-surface-dark">
-              <ShoppingBag size={16} strokeWidth={2.2} />
-            </div>
-            <span className="font-display text-lg text-on-dark">Logoipsum</span>
+            <img src="/favicon.png" alt="" className="h-8 w-8 rounded-sm" />
+            <span className="font-display text-lg text-on-dark">Cartio</span>
           </div>
           <p className="mt-3 text-sm text-on-dark/70">Decorate your Space with Us</p>
 
@@ -63,7 +60,7 @@ export function StorefrontFooter() {
         ))}
       </div>
       <div className="border-t border-on-dark/10 px-4 py-4 text-center text-xs text-on-dark/50 sm:px-6">
-        © {new Date().getFullYear()} Logoipsum. All rights reserved.
+        © {new Date().getFullYear()} Cartio. All rights reserved.
       </div>
     </footer>
   );

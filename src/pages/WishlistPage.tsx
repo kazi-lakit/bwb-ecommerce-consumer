@@ -17,7 +17,7 @@ function itemId(record: EntityRecord): string {
 }
 
 export default function WishlistPage() {
-  usePageMeta({ title: "Your wishlist — Logoipsum", noIndex: true });
+  usePageMeta({ title: "Your wishlist — Cartio", noIndex: true });
   const { theme } = useTheme();
   const { productIds } = useWishlist();
 
