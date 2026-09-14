@@ -153,44 +153,15 @@ export default function ProductDetailPage() {
   const moreLikeThis = product ? relatedItems.filter((p) => itemId(p) !== itemId(product)).slice(0, 10) : [];
   const moreLikeThisPlaceholders = useMemo(() => assignPlaceholders(moreLikeThis, theme), [moreLikeThis, theme]);
 
-  if (productList.isLoading) {
-    return (
-      <div className="min-h-screen bg-canvas">
-        <StorefrontHeader />
-        <div className="flex justify-center py-24">
-          <Spinner className="h-6 w-6" />
-        </div>
-      </div>
-    );
-  }
+  const primary = product ? getPrimaryImage(product) : undefined;
 
-  if (!slug) return <Navigate to="/" replace />;
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-canvas">
-        <StorefrontHeader />
-        <div className="mx-auto max-w-3xl p-6 text-center">
-          <p className="py-16 text-sm text-muted">This product doesn't exist, or isn't available anymore.</p>
-          <Link to="/" className="text-sm font-medium text-brand-accent hover:underline">
-            Back to catalog
-          </Link>
-        </div>
-        <StorefrontFooter />
-      </div>
-    );
-  }
-
-  const media = (Array.isArray(product.Media) ? (product.Media as MediaItem[]) : []).filter((m) => m.Url);
-  const primary = getPrimaryImage(product);
-  const mainImage = activeImage ?? primary?.Url ?? null;
-  const attributes = Array.isArray(product.Attributes) ? (product.Attributes as AttributeItem[]) : [];
-  const materialAttributes = attributes.filter((a) => /material/i.test(a.Code ?? "") || /material/i.test(a.Name ?? ""));
-  const detailAttributes = attributes.filter((a) => !materialAttributes.includes(a));
-  const dimensions = selectedVariant?.Dimensions as Dimensions | undefined;
-  const name = (product.Name as string) || "Untitled product";
-  const wishlisted = has(itemId(product));
-
+  // Every hook above this point runs on every render regardless of load state — this one
+  // must too. It used to sit below the early returns for isLoading/!slug/!product, which
+  // meant the very first render (still loading) called fewer hooks than every render after
+  // (product loaded), tripping React's "rendered more hooks than during the previous render"
+  // check (#310) — the crash reproduced on nearly every product once traffic wasn't already
+  // sitting on a warm query cache. `product` being possibly undefined here is already handled
+  // throughout via `product?.`.
   usePageMeta(
     useMemo(() => {
       const productName = (product?.Name as string) || "Product";
@@ -232,6 +203,43 @@ export default function ProductDetailPage() {
       };
     }, [product, slug, primary, selectedVariant, brand, price, stockEnforced, outOfStock, availability.isLoading])
   );
+
+  if (productList.isLoading) {
+    return (
+      <div className="min-h-screen bg-canvas">
+        <StorefrontHeader />
+        <div className="flex justify-center py-24">
+          <Spinner className="h-6 w-6" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!slug) return <Navigate to="/" replace />;
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-canvas">
+        <StorefrontHeader />
+        <div className="mx-auto max-w-3xl p-6 text-center">
+          <p className="py-16 text-sm text-muted">This product doesn't exist, or isn't available anymore.</p>
+          <Link to="/" className="text-sm font-medium text-brand-accent hover:underline">
+            Back to catalog
+          </Link>
+        </div>
+        <StorefrontFooter />
+      </div>
+    );
+  }
+
+  const media = (Array.isArray(product.Media) ? (product.Media as MediaItem[]) : []).filter((m) => m.Url);
+  const mainImage = activeImage ?? primary?.Url ?? null;
+  const attributes = Array.isArray(product.Attributes) ? (product.Attributes as AttributeItem[]) : [];
+  const materialAttributes = attributes.filter((a) => /material/i.test(a.Code ?? "") || /material/i.test(a.Name ?? ""));
+  const detailAttributes = attributes.filter((a) => !materialAttributes.includes(a));
+  const dimensions = selectedVariant?.Dimensions as Dimensions | undefined;
+  const name = (product.Name as string) || "Untitled product";
+  const wishlisted = has(itemId(product));
 
   function handleAddToCart() {
     if (!product || !selectedVariant || !price) {
