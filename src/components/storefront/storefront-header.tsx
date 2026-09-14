@@ -217,28 +217,6 @@ export function StorefrontHeader() {
           })}
         </nav>
       </div>
-
-      <div className="mx-auto flex max-w-7xl items-center justify-end gap-2 px-4 py-2 sm:px-6">
-        <div className="relative">
-          <select
-            aria-label="Jump to category"
-            value={activeCategory}
-            onChange={(e) => navigate(e.target.value ? `/products?category=${e.target.value}` : "/products")}
-            className="h-8 appearance-none rounded-sm border border-hairline bg-transparent pl-3 pr-7 text-xs tracking-[0.02em] text-steel outline-none"
-          >
-            <option value="">All Categories</option>
-            {(categories.data?.items ?? [])
-              .slice()
-              .sort((a, b) => String(a.Name).localeCompare(String(b.Name)))
-              .map((c) => (
-                <option key={itemId(c)} value={itemId(c)}>
-                  {c.Name as string}
-                </option>
-              ))}
-          </select>
-          <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted" />
-        </div>
-      </div>
     </header>
   );
 }

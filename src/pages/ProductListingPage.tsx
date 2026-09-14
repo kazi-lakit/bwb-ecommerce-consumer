@@ -10,6 +10,7 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { ProductCard } from "@/components/storefront/product-card";
 import { PriceRangeSlider } from "@/components/storefront/price-range-slider";
 import { CheckboxFilterGroup, type FilterOption } from "@/components/storefront/checkbox-filter-group";
+import { FilterLinkList } from "@/components/storefront/filter-link-list";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
@@ -71,6 +72,33 @@ export default function ProductListingPage() {
 
   const categories = useEntityList("Category", { pageNo: 1, pageSize: 100 });
   const category = (categories.data?.items ?? []).find((c) => itemId(c) === categoryId);
+
+  // Direct children of whatever category is currently active — e.g. viewing "Bedroom" (a
+  // top-level category) lists "Beds"/"Nightstands" so a shopper can narrow further. Nothing to
+  // show for a leaf category (no children) or when browsing "All Products" (no category set).
+  const subcategories = useMemo(() => {
+    if (!categoryId) return [];
+    return (categories.data?.items ?? []).filter((c) => (c.ParentId as string | undefined) === categoryId);
+  }, [categories.data, categoryId]);
+
+  const brands = useEntityList("Brand", { pageNo: 1, pageSize: 100 });
+  // Same "no explicit status means visible" rule as BrandListingPage.
+  const brandOptions = useMemo(
+    () =>
+      (brands.data?.items ?? [])
+        .filter((b) => (b.Status as string | undefined) !== "inactive")
+        .slice()
+        .sort((a, b) => String(a.Name).localeCompare(String(b.Name))),
+    [brands.data]
+  );
+
+  function hrefWithParam(key: "category" | "brand", value: string): string {
+    const next = new URLSearchParams(searchParams);
+    if (next.get(key) === value) next.delete(key); // clicking the active one clears it
+    else next.set(key, value);
+    const qs = next.toString();
+    return qs ? `/products?${qs}` : "/products";
+  }
 
   const where = useMemo(() => {
     const w: Record<string, unknown> = {};
@@ -229,6 +257,12 @@ export default function ProductListingPage() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
           <aside className="space-y-1">
+            <FilterLinkList
+              title="Subcategories"
+              items={subcategories.map((c) => ({ id: itemId(c), label: c.Name as string }))}
+              activeId={categoryId}
+              hrefFor={(id) => hrefWithParam("category", id)}
+            />
             <div className="border-b border-hairline-soft py-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-ink">Price</h3>
@@ -251,6 +285,12 @@ export default function ProductListingPage() {
               />
               In stock only
             </label>
+            <FilterLinkList
+              title="Brands"
+              items={brandOptions.map((b) => ({ id: itemId(b), label: b.Name as string }))}
+              activeId={brandId}
+              hrefFor={(id) => hrefWithParam("brand", id)}
+            />
             <CheckboxFilterGroup title="Fabric Color" options={fabricOptions} selected={fabricColor} onChange={setFabricColor} />
             <CheckboxFilterGroup title="Structure Color" options={structureOptions} selected={structureColor} onChange={setStructureColor} />
             <CheckboxFilterGroup title="Material" options={materialOptions} selected={material} onChange={setMaterial} />
