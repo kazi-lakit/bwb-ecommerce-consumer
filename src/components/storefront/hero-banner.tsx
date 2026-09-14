@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { DEFAULT_STOREFRONT_HERO, getPublishedHomeHero, STOREFRONT_CONTENT_LIVE } from "@/lib/blocks/storefront-content";
 
-const DEFAULT_HERO_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1200 600%22%3E%3Crect width=%221200%22 height=%22600%22 fill=%22%233c3835%22/%3E%3Crect x=%22665%22 y=%22285%22 width=%22335%22 height=%22240%22 rx=%2236%22 fill=%22%23b54a1f%22/%3E%3Crect x=%22910%22 y=%2285%22 width=%22235%22 height=%22345%22 rx=%2238%22 fill=%22%234d7025%22/%3E%3Ccircle cx=%22755%22 cy=%22130%22 r=%22135%22 fill=%22%23e8e5df%22/%3E%3C/svg%3E";
+const DEFAULT_HERO_IMAGE = "/images/cartio-home-hero.jpg";
 
 export function HeroBanner() {
   const heroQuery = useQuery({
