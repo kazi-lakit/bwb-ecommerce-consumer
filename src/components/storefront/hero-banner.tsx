@@ -5,29 +5,43 @@ import { Button } from "@/components/ui/button";
 export function HeroBanner() {
   return (
     <section
-      className="relative overflow-hidden rounded-md bg-cover bg-center px-6 py-24 sm:px-14 sm:py-32"
+      className="relative isolate min-h-[520px] overflow-hidden rounded-lg bg-cover bg-center px-6 py-16 shadow-[var(--shadow-card)] sm:px-12 sm:py-20 lg:flex lg:min-h-[590px] lg:items-center lg:px-16"
       style={{
         backgroundImage:
-          "linear-gradient(to right, rgba(28,25,23,0.8) 0%, rgba(28,25,23,0.55) 40%, rgba(28,25,23,0.15) 65%), url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 800 400%22%3E%3Crect width=%22800%22 height=%22400%22 fill=%22%2344403c%22/%3E%3Crect x=%22460%22 y=%22160%22 width=%22200%22 height=%22140%22 rx=%2220%22 fill=%22%23c2410c%22/%3E%3Crect x=%22600%22 y=%2260%22 width=%22150%22 height=%22200%22 rx=%2220%22 fill=%22%234d7c0f%22/%3E%3Ccircle cx=%22500%22 cy=%2270%22 r=%2270%22 fill=%22%23e7e5e4%22/%3E%3C/svg%3E')",
+          "linear-gradient(90deg, rgba(12,10,9,0.94) 0%, rgba(28,25,23,0.82) 43%, rgba(28,25,23,0.18) 74%), url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1200 600%22%3E%3Crect width=%221200%22 height=%22600%22 fill=%22%233c3835%22/%3E%3Crect x=%22665%22 y=%22285%22 width=%22335%22 height=%22240%22 rx=%2236%22 fill=%22%23b54a1f%22/%3E%3Crect x=%22910%22 y=%2285%22 width=%22235%22 height=%22345%22 rx=%2238%22 fill=%22%234d7025%22/%3E%3Ccircle cx=%22755%22 cy=%22130%22 r=%22135%22 fill=%22%23e8e5df%22/%3E%3C/svg%3E')",
       }}
     >
-      <div className="relative max-w-lg">
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-on-dark/85">New Collection</p>
-        <h1 className="font-display mt-3 text-4xl text-on-dark sm:text-[56px] sm:leading-[1.05]">
-          Decorate your Space with Us
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_20%,rgba(249,115,22,0.18),transparent_28%)]" />
+      <div className="relative max-w-xl">
+        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-on-dark/90 backdrop-blur-sm">
+          Autumn collection · {new Date().getFullYear()}
+        </span>
+        <h1 className="mt-6 max-w-xl font-display text-4xl leading-[1.02] text-on-dark sm:text-[58px] lg:text-[68px]">
+          Considered pieces for modern living.
         </h1>
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-xs tracking-[0.03em] text-on-dark/85">
-          <span>Order</span>
-          <span className="h-1 w-1 rounded-full bg-on-dark/60" />
-          <span>Door Bell</span>
-          <span className="h-1 w-1 rounded-full bg-on-dark/60" />
-          <span>Space Solved</span>
+        <p className="mt-6 max-w-md text-sm leading-6 text-on-dark/70 sm:text-base sm:leading-7">
+          Furniture and objects selected for enduring quality, thoughtful function, and a home that feels distinctly yours.
+        </p>
+        <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+          <Link to="/products">
+            <Button className="min-w-44">
+              Shop the collection <ArrowRight size={16} />
+            </Button>
+          </Link>
+          <Link
+            to="/products"
+            className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-on-dark transition-colors hover:bg-white/10"
+          >
+            Explore all pieces
+          </Link>
         </div>
-        <Link to="/products" className="mt-8 inline-block">
-          <Button>
-            Buy Now <ArrowRight size={15} />
-          </Button>
-        </Link>
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-on-dark/55">
+          <span>Curated collections</span>
+          <span className="h-1 w-1 rounded-full bg-brand-accent" />
+          <span>Secure account</span>
+          <span className="h-1 w-1 rounded-full bg-brand-accent" />
+          <span>Thoughtful delivery</span>
+        </div>
       </div>
     </section>
   );

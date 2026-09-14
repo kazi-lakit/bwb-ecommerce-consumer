@@ -22,23 +22,34 @@ export function ProductCard({ product, placeholderImage, price, colors = [] }: P
   const slug = (product.Slug as string) || (product.ItemId as string) || (product.itemId as string);
   const productId = (product.ItemId ?? product.itemId) as string;
   const wishlisted = has(productId);
+  const description = product.ShortDescription as string | undefined;
+  const salePercentage = price?.original && price.original > price.current
+    ? Math.max(1, Math.round(((price.original - price.current) / price.original) * 100))
+    : null;
 
   return (
-    <div className="group relative">
+    <article className="group relative h-full">
       <Link to={`/product/${slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-md bg-surface transition-shadow duration-200 group-hover:shadow-[var(--shadow-card)]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-md bg-surface shadow-[var(--shadow-card)]">
           <ImageWithFallback
             src={image?.Url}
             fallback={placeholderImage}
             alt={image?.AltText || name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.035]"
           />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {salePercentage && (
+            <span className="absolute left-3 top-3 rounded-full bg-brand-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-on-primary shadow-sm">
+              Save {salePercentage}%
+            </span>
+          )}
         </div>
-        <div className="mt-3">
-          <h3 className="line-clamp-1 text-sm font-medium text-ink">{name}</h3>
+        <div className="mt-4">
+          <h3 className="line-clamp-1 text-sm font-semibold text-ink transition-colors group-hover:text-brand-accent">{name}</h3>
+          {description && <p className="mt-1 line-clamp-1 text-xs text-muted">{description}</p>}
           {price && (
-            <div className="mt-0.5 flex items-baseline gap-1.5 text-sm text-ink">
-              <span>{formatMoney(price.current, price.currency)}</span>
+            <div className="mt-2 flex items-baseline gap-2 text-sm text-ink">
+              <span className="font-semibold">{formatMoney(price.current, price.currency)}</span>
               {price.original && (
                 <span className="text-xs text-muted line-through">{formatMoney(price.original, price.currency)}</span>
               )}
@@ -46,15 +57,16 @@ export function ProductCard({ product, placeholderImage, price, colors = [] }: P
           )}
         </div>
         {colors.length > 0 && (
-          <div className="mt-2 flex items-center gap-1.5">
-            {colors.slice(0, 7).map((value) => (
+          <div className="mt-3 flex items-center gap-1.5">
+            {colors.slice(0, 5).map((value) => (
               <span
                 key={value}
                 title={value}
-                className="h-3.5 w-3.5 flex-none rounded-full border border-hairline"
+                className="h-3.5 w-3.5 flex-none rounded-full border border-border-strong shadow-sm"
                 style={{ background: value }}
               />
             ))}
+            {colors.length > 5 && <span className="ml-1 text-[10px] font-medium text-muted">+{colors.length - 5}</span>}
           </div>
         )}
       </Link>
@@ -66,12 +78,12 @@ export function ProductCard({ product, placeholderImage, price, colors = [] }: P
           toggle(productId);
         }}
         className={clsx(
-          "absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-canvas/90 transition-colors",
+          "absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-canvas/95 shadow-sm backdrop-blur-sm transition-all hover:scale-105",
           wishlisted ? "text-brand-error" : "text-steel hover:text-brand-error"
         )}
       >
-        <Heart size={15} fill={wishlisted ? "currentColor" : "none"} />
+        <Heart size={16} fill={wishlisted ? "currentColor" : "none"} />
       </button>
-    </div>
+    </article>
   );
 }

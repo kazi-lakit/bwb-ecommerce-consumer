@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ChevronRight, Heart, Share2, Truck, RotateCcw, Headphones } from "lucide-react";
+import { BadgeCheck, ChevronRight, Heart, Headphones, PackageCheck, RotateCcw, Share2, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import clsx from "clsx";
 import { useEntityList, useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
@@ -208,9 +208,13 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-canvas">
         <StorefrontHeader />
-        <div className="flex justify-center py-24">
-          <Spinner className="h-6 w-6" />
-        </div>
+        <main className="mx-auto flex max-w-[1440px] justify-center px-4 py-20 sm:px-6 lg:px-8">
+          <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-hairline bg-surface px-6 py-14 text-center shadow-[var(--shadow-card)]">
+            <Spinner className="h-9 w-9" />
+            <p className="mt-5 text-sm font-semibold text-ink">Preparing product details</p>
+            <p className="mt-1 text-xs text-muted">Checking the latest options and availability.</p>
+          </div>
+        </main>
       </div>
     );
   }
@@ -221,12 +225,21 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-canvas">
         <StorefrontHeader />
-        <div className="mx-auto max-w-3xl p-6 text-center">
-          <p className="py-16 text-sm text-muted">This product doesn't exist, or isn't available anymore.</p>
-          <Link to="/" className="text-sm font-medium text-brand-accent hover:underline">
-            Back to catalog
-          </Link>
-        </div>
+        <main className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
+          <div className="rounded-lg border border-hairline bg-surface px-6 py-14 shadow-[var(--shadow-card)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">Product unavailable</p>
+            <h1 className="font-display mt-3 text-3xl text-ink">We couldn't find this item</h1>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-steel">
+              It may have been removed or is no longer available. Explore the catalog to find a suitable alternative.
+            </p>
+            <Link
+              to="/products"
+              className="mt-7 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-accent px-6 text-sm font-semibold text-on-primary transition-colors hover:bg-brand-accent-deep"
+            >
+              Explore the catalog
+            </Link>
+          </div>
+        </main>
         <StorefrontFooter />
       </div>
     );
@@ -240,6 +253,11 @@ export default function ProductDetailPage() {
   const dimensions = selectedVariant?.Dimensions as Dimensions | undefined;
   const name = (product.Name as string) || "Untitled product";
   const wishlisted = has(itemId(product));
+  const activeColor = colorOptions.find((option) => option.variantId === (selectedVariant ? itemId(selectedVariant) : undefined))?.value;
+  const salePercentage = price?.original && price.original > price.current
+    ? Math.max(1, Math.round(((price.original - price.current) / price.original) * 100))
+    : null;
+  const canPurchase = Boolean(selectedVariant && price) && !outOfStock;
 
   function handleAddToCart() {
     if (!product || !selectedVariant || !price) {
@@ -271,45 +289,58 @@ export default function ProductDetailPage() {
     return list.map((p, i) => ({ product: p, placeholderImage: placeholders[i], price: getProductPrice(p, []) }));
   }
 
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard.");
+    } catch {
+      toast.error("We couldn't copy the link. Copy it from your browser instead.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-canvas">
       <StorefrontHeader />
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <nav className="mb-5 flex items-center gap-1.5 text-xs text-muted">
-          <Link to="/" className="hover:text-ink">
-            Home
-          </Link>
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <nav aria-label="Breadcrumb" className="mb-6 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs text-muted">
+          <Link to="/" className="hover:text-ink">Home</Link>
           <ChevronRight size={12} />
-          <Link to="/products" className="hover:text-ink">
-            Furniture
-          </Link>
+          <Link to="/products" className="hover:text-ink">Products</Link>
           {categoryName && (
             <>
               <ChevronRight size={12} />
-              <span>{categoryName}</span>
+              <span className="whitespace-nowrap">{categoryName}</span>
             </>
           )}
           <ChevronRight size={12} />
-          <span className="text-ink">{name}</span>
+          <span aria-current="page" className="truncate text-ink">{name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <div>
-            <div className="aspect-square overflow-hidden rounded-md bg-surface">
-              <ImageWithFallback
-                src={mainImage}
-                fallback={placeholder}
-                alt={primary?.AltText || name}
-                className="h-full w-full object-cover"
-              />
+        <section className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)] lg:gap-10 xl:gap-14">
+          <div className="min-w-0">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-hairline bg-surface shadow-[var(--shadow-card)] sm:aspect-[5/4] lg:aspect-[4/5] xl:aspect-[5/4]">
+              <ImageWithFallback src={mainImage} fallback={placeholder} alt={primary?.AltText || name} className="h-full w-full object-cover" />
+              {categoryName && (
+                <span className="absolute left-4 top-4 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-900 shadow-sm backdrop-blur-sm">
+                  {categoryName}
+                </span>
+              )}
             </div>
             {media.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto">
+              <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1" aria-label="Product images">
                 {media.map((m) => (
                   <button
                     key={m.MediaId ?? m.Url}
+                    type="button"
                     onClick={() => setActiveImage(m.Url ?? null)}
-                    className="h-16 w-16 flex-none overflow-hidden rounded-md border border-hairline bg-surface"
+                    aria-label={`View ${m.AltText || name}`}
+                    aria-pressed={mainImage === m.Url}
+                    className={clsx(
+                      "h-20 w-20 flex-none overflow-hidden rounded-md border-2 bg-surface transition-all sm:h-24 sm:w-24",
+                      mainImage === m.Url
+                        ? "border-ink shadow-[var(--shadow-card)]"
+                        : "border-transparent opacity-70 hover:border-border-strong hover:opacity-100"
+                    )}
                   >
                     <ImageWithFallback src={m.Url} fallback={placeholder} alt={m.AltText || name} className="h-full w-full object-cover" />
                   </button>
@@ -318,60 +349,69 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                {selectedVariant?.Sku ? <p className="text-xs font-medium text-muted">{selectedVariant.Sku as string}</p> : null}
-                <h1 className="font-display mt-1 text-[28px] text-ink">{name}</h1>
-                {brand ? (
-                  <Link
-                    to={`/brand/${(brand.Slug as string) || ((brand.ItemId ?? brand.itemId) as string)}`}
-                    className="mt-1 inline-block text-sm text-brand-accent hover:underline"
-                  >
-                    {brand.Name as string}
-                  </Link>
-                ) : null}
+          <aside className="rounded-lg border border-hairline bg-surface p-5 shadow-[var(--shadow-card)] sm:p-7 lg:sticky lg:top-5 xl:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.12em]">
+                  {brand ? (
+                    <Link
+                      to={`/brand/${(brand.Slug as string) || ((brand.ItemId ?? brand.itemId) as string)}`}
+                      className="text-brand-accent hover:text-brand-accent-deep"
+                    >
+                      {brand.Name as string}
+                    </Link>
+                  ) : (
+                    <span className="text-brand-accent">The Cartio collection</span>
+                  )}
+                  {selectedVariant?.Sku ? <span className="text-muted">SKU {selectedVariant.Sku as string}</span> : null}
+                </div>
+                <h1 className="font-display mt-3 text-3xl leading-tight text-ink sm:text-4xl">{name}</h1>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex flex-none gap-2">
                 <button
                   type="button"
                   aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
                   onClick={() => toggle(itemId(product))}
                   className={clsx(
-                    "flex h-9 w-9 items-center justify-center rounded-full border border-hairline",
-                    wishlisted ? "text-brand-error" : "text-steel hover:text-brand-error"
+                    "flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-canvas transition-colors",
+                    wishlisted ? "text-brand-error" : "text-steel hover:border-border-strong hover:text-brand-error"
                   )}
                 >
-                  <Heart size={16} fill={wishlisted ? "currentColor" : "none"} />
+                  <Heart size={17} fill={wishlisted ? "currentColor" : "none"} />
                 </button>
                 <button
                   type="button"
-                  aria-label="Share"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-steel hover:text-ink"
-                  onClick={() => {
-                    void navigator.clipboard?.writeText(window.location.href);
-                    toast.success("Link copied to clipboard.");
-                  }}
+                  aria-label="Copy product link"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-canvas text-steel transition-colors hover:border-border-strong hover:text-ink"
+                  onClick={() => void handleShare()}
                 >
-                  <Share2 size={15} />
+                  <Share2 size={16} />
                 </button>
               </div>
             </div>
 
             {variantList.isLoading ? (
-              <Spinner className="h-5 w-5" />
+              <div className="mt-6 flex items-center gap-2 text-sm text-muted"><Spinner className="h-5 w-5" /> Loading options</div>
             ) : price ? (
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl text-ink">{formatMoney(price.current, price.currency)}</span>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <span className="text-3xl font-semibold tracking-tight text-ink">{formatMoney(price.current, price.currency)}</span>
                 {price.original && <span className="text-sm text-muted line-through">{formatMoney(price.original, price.currency)}</span>}
+                {salePercentage && (
+                  <span className="rounded-full bg-brand-accent/10 px-2.5 py-1 text-[11px] font-semibold text-brand-accent">Save {salePercentage}%</span>
+                )}
               </div>
             ) : null}
 
+            {product.ShortDescription ? <p className="mt-5 text-sm leading-6 text-steel">{product.ShortDescription as string}</p> : null}
+
+            <div className="my-6 border-t border-hairline-soft" />
+
             {colorOptions.length > 0 && (
               <div>
-                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted">
-                  Color: {colorOptions.find((o) => o.variantId === (selectedVariant ? itemId(selectedVariant) : undefined))?.value ?? ""}
-                </p>
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <p className="text-xs font-semibold text-ink">Choose a colour</p>
+                  {activeColor && <span className="text-xs text-muted">{activeColor}</span>}
+                </div>
                 <div className="flex flex-wrap gap-3">
                   {colorOptions.map((option) => (
                     <button
@@ -380,7 +420,7 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedVariantId(option.variantId)}
                       aria-label={option.value}
                       className={clsx(
-                        "h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-canvas transition-transform",
+                        "h-10 w-10 rounded-full border border-black/10 ring-2 ring-offset-2 ring-offset-surface transition-transform hover:scale-105",
                         (selectedVariant ? itemId(selectedVariant) : defaultVariant && itemId(defaultVariant)) === option.variantId
                           ? "ring-ink"
                           : "ring-transparent"
@@ -392,129 +432,134 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {product.ShortDescription ? <p className="text-sm text-steel">{product.ShortDescription as string}</p> : null}
+            <div className={clsx("flex items-center gap-2 text-xs font-semibold", colorOptions.length > 0 ? "mt-6" : "")}>
+              {availability.isLoading && stockEnforced ? (
+                <><Spinner className="h-4 w-4" /> <span className="text-muted">Checking availability</span></>
+              ) : (
+                <>
+                  <span className={clsx("h-2 w-2 rounded-full", outOfStock ? "bg-brand-error" : stockEnforced && availability.totalAvailable <= 5 ? "bg-brand-warn" : "bg-brand-success")} />
+                  <span className={outOfStock ? "text-brand-error" : stockEnforced && availability.totalAvailable <= 5 ? "text-brand-warn" : "text-brand-success"}>
+                    {outOfStock
+                      ? "Currently out of stock"
+                      : stockEnforced && availability.totalAvailable <= 5
+                        ? `Only ${availability.totalAvailable} available`
+                        : stockEnforced
+                          ? "In stock and ready to order"
+                          : "Available to order"}
+                  </span>
+                </>
+              )}
+            </div>
 
-            {stockEnforced && !availability.isLoading && (
-              <p className={clsx("text-xs font-medium", outOfStock ? "text-brand-error" : availability.totalAvailable <= 5 ? "text-brand-warn" : "text-brand-success")}>
-                {outOfStock
-                  ? "Out of stock"
-                  : availability.totalAvailable <= 5
-                    ? `Only ${availability.totalAvailable} left in stock`
-                    : "In stock"}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <QuantityStepper value={quantity} onChange={setQuantity} max={stockEnforced ? Math.max(1, availability.totalAvailable) : 99} />
+              <Button onClick={handleAddToCart} disabled={!canPurchase} className="flex-1">Buy Now</Button>
+            </div>
+            <Button variant="secondary" onClick={handleAddToCart} disabled={!canPurchase} className="mt-3 w-full">
+              <ShoppingBag size={17} /> Add to cart
+            </Button>
+
+            <div className="mt-6 grid gap-3 border-t border-hairline-soft pt-5 sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <ShieldCheck size={18} className="mt-0.5 flex-none text-brand-accent" />
+                <div>
+                  <p className="text-xs font-semibold text-ink">Secure checkout</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-muted">Protected payment experience</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <PackageCheck size={18} className="mt-0.5 flex-none text-brand-accent" />
+                <div>
+                  <p className="text-xs font-semibold text-ink">Order support</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-muted">Help before and after purchase</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section className="mt-12 overflow-hidden rounded-lg border border-hairline bg-surface shadow-[var(--shadow-card)] sm:mt-16">
+          <div className="border-b border-hairline-soft px-5 py-6 sm:px-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">Made for everyday living</p>
+            <h2 className="font-display mt-2 text-2xl text-ink sm:text-3xl">Product information</h2>
+          </div>
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="px-5 py-7 sm:px-8 sm:py-9 lg:border-r lg:border-hairline-soft">
+              <h3 className="text-sm font-semibold text-ink">Overview</h3>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-steel">
+                {(product.LongDescription as string) || (product.ShortDescription as string) || "Product details will be available soon."}
               </p>
-            )}
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <QuantityStepper
-                value={quantity}
-                onChange={setQuantity}
-                max={stockEnforced ? Math.max(1, availability.totalAvailable) : 99}
-              />
-              <Button variant="secondary" onClick={handleAddToCart} disabled={outOfStock}>
-                Add to Cart
-              </Button>
-              <Button onClick={handleAddToCart} disabled={outOfStock}>
-                Buy Now
-              </Button>
+              <div className="mt-7 flex items-center gap-3 rounded-md bg-surface-soft px-4 py-3 text-xs text-steel">
+                <BadgeCheck size={18} className="flex-none text-brand-accent" />
+                Carefully selected for quality, function, and lasting appeal.
+              </div>
+            </div>
+            <div className="px-5 py-7 sm:px-8 sm:py-9">
+              <h3 className="text-sm font-semibold text-ink">Specifications</h3>
+              {detailAttributes.length > 0 || materialAttributes.length > 0 || dimensions ? (
+                <dl className="mt-3 divide-y divide-hairline-soft">
+                  {[...detailAttributes, ...materialAttributes].map((attribute) => (
+                    <div key={`${attribute.Code ?? attribute.Name}-${attribute.Value}`} className="grid grid-cols-[minmax(110px,0.75fr)_1.25fr] gap-4 py-3 text-sm">
+                      <dt className="text-muted">{attribute.Name || attribute.Code}</dt>
+                      <dd className="text-right font-medium text-ink">{attribute.Value}</dd>
+                    </div>
+                  ))}
+                  {typeof dimensions?.Length === "number" && (
+                    <div className="grid grid-cols-[minmax(110px,0.75fr)_1.25fr] gap-4 py-3 text-sm">
+                      <dt className="text-muted">Length</dt>
+                      <dd className="text-right font-medium text-ink">{dimensions.Length} {dimensions.DimensionUnit || "mm"}</dd>
+                    </div>
+                  )}
+                  {typeof dimensions?.Width === "number" && (
+                    <div className="grid grid-cols-[minmax(110px,0.75fr)_1.25fr] gap-4 py-3 text-sm">
+                      <dt className="text-muted">Width</dt>
+                      <dd className="text-right font-medium text-ink">{dimensions.Width} {dimensions.DimensionUnit || "mm"}</dd>
+                    </div>
+                  )}
+                  {typeof dimensions?.Height === "number" && (
+                    <div className="grid grid-cols-[minmax(110px,0.75fr)_1.25fr] gap-4 py-3 text-sm">
+                      <dt className="text-muted">Height</dt>
+                      <dd className="text-right font-medium text-ink">{dimensions.Height} {dimensions.DimensionUnit || "mm"}</dd>
+                    </div>
+                  )}
+                  {typeof dimensions?.Weight === "number" && (
+                    <div className="grid grid-cols-[minmax(110px,0.75fr)_1.25fr] gap-4 py-3 text-sm">
+                      <dt className="text-muted">Weight</dt>
+                      <dd className="text-right font-medium text-ink">{dimensions.Weight} {dimensions.WeightUnit || "kg"}</dd>
+                    </div>
+                  )}
+                </dl>
+              ) : (
+                <p className="mt-3 text-sm text-muted">Additional specifications will be available soon.</p>
+              )}
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 border-t border-hairline-soft pt-8 sm:grid-cols-3">
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-ink">Product Details</h2>
-            <p className="text-sm text-steel">{(product.LongDescription as string) || (product.ShortDescription as string) || "—"}</p>
-            {detailAttributes.length > 0 && (
-              <dl className="mt-3 space-y-1 text-sm">
-                {detailAttributes.map((a) => (
-                  <div key={a.Code} className="flex justify-between gap-2">
-                    <dt className="text-muted">{a.Name || a.Code}</dt>
-                    <dd className="text-ink">{a.Value}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
+        <section aria-label="Shopping services" className="mt-8 grid grid-cols-1 overflow-hidden rounded-lg bg-surface-dark text-on-dark sm:grid-cols-3">
+          <div className="border-white/10 p-6 sm:border-r lg:p-7">
+            <RotateCcw size={20} strokeWidth={1.5} className="text-brand-accent" />
+            <p className="mt-3 text-sm font-semibold">Returns &amp; refunds</p>
+            <p className="mt-1 text-xs leading-5 text-on-dark/65">Review eligibility and return guidance before ordering.</p>
           </div>
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-ink">Materials</h2>
-            {materialAttributes.length > 0 ? (
-              <dl className="space-y-1 text-sm">
-                {materialAttributes.map((a) => (
-                  <div key={a.Code} className="flex justify-between gap-2">
-                    <dt className="text-muted">{a.Name || a.Code}</dt>
-                    <dd className="text-ink">{a.Value}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <p className="text-sm text-muted">—</p>
-            )}
+          <div className="border-t border-white/10 p-6 sm:border-r sm:border-t-0 lg:p-7">
+            <Truck size={20} strokeWidth={1.5} className="text-brand-accent" />
+            <p className="mt-3 text-sm font-semibold">Delivery options</p>
+            <p className="mt-1 text-xs leading-5 text-on-dark/65">See the delivery options available during checkout.</p>
           </div>
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-ink">Dimensions</h2>
-            {dimensions ? (
-              <dl className="space-y-1 text-sm">
-                {typeof dimensions.Length === "number" && (
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-muted">Length</dt>
-                    <dd className="text-ink">
-                      {dimensions.Length} {dimensions.DimensionUnit || "mm"}
-                    </dd>
-                  </div>
-                )}
-                {typeof dimensions.Width === "number" && (
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-muted">Width</dt>
-                    <dd className="text-ink">
-                      {dimensions.Width} {dimensions.DimensionUnit || "mm"}
-                    </dd>
-                  </div>
-                )}
-                {typeof dimensions.Height === "number" && (
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-muted">Height</dt>
-                    <dd className="text-ink">
-                      {dimensions.Height} {dimensions.DimensionUnit || "mm"}
-                    </dd>
-                  </div>
-                )}
-                {typeof dimensions.Weight === "number" && (
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-muted">Weight</dt>
-                    <dd className="text-ink">
-                      {dimensions.Weight} {dimensions.WeightUnit || "kg"}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            ) : (
-              <p className="text-sm text-muted">—</p>
-            )}
+          <div className="border-t border-white/10 p-6 sm:border-t-0 lg:p-7">
+            <Headphones size={20} strokeWidth={1.5} className="text-brand-accent" />
+            <p className="mt-3 text-sm font-semibold">Customer care</p>
+            <p className="mt-1 text-xs leading-5 text-on-dark/65">Get help with product questions and existing orders.</p>
           </div>
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 gap-6 rounded-md bg-surface-soft p-6 sm:grid-cols-3">
-          <div>
-            <RotateCcw size={18} strokeWidth={1.5} className="text-ink" />
-            <p className="mt-2 text-sm font-medium text-ink">Return &amp; Refund Policy</p>
-            <p className="mt-1 text-xs text-muted">Read our return policy for eligible items.</p>
-          </div>
-          <div>
-            <Truck size={18} strokeWidth={1.5} className="text-ink" />
-            <p className="mt-2 text-sm font-medium text-ink">Delivery &amp; Assembling</p>
-            <p className="mt-1 text-xs text-muted">Doorstep delivery or local pickup, your choice.</p>
-          </div>
-          <div>
-            <Headphones size={18} strokeWidth={1.5} className="text-ink" />
-            <p className="mt-2 text-sm font-medium text-ink">Contact Customer Care</p>
-            <p className="mt-1 text-xs text-muted">We're here to help before and after you buy.</p>
-          </div>
-        </div>
+        </section>
 
         {product ? <ProductReviews productId={itemId(product)} variantId={selectedVariant ? itemId(selectedVariant) : undefined} /> : null}
 
         <ProductRail
+          eyebrow="Complete the room"
           title={categoryName ? `More in ${categoryName}` : "More like this"}
+          description="Explore complementary pieces selected from the same collection."
           items={toRailItems(moreLikeThis, moreLikeThisPlaceholders)}
         />
 
@@ -522,7 +567,12 @@ export default function ProductDetailPage() {
 
         {/* Real view history now, from this browser's own localStorage — not a claim about
             what other customers did. Renders nothing on a first visit, which is correct. */}
-        <ProductRail title="Recently viewed" items={toRailItems(recentlyViewed, recentPlaceholders)} />
+        <ProductRail
+          eyebrow="Continue exploring"
+          title="Recently viewed"
+          description="Return to products you explored earlier on this device."
+          items={toRailItems(recentlyViewed, recentPlaceholders)}
+        />
       </main>
       <StorefrontFooter />
     </div>

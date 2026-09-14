@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, House, PackageCheck, ShieldCheck, Sparkles } from "lucide-react";
 import { useEntityListBatch } from "@/lib/blocks/hooks";
 import type { EntityRecord } from "@/lib/blocks/collections";
 import { assignPlaceholders } from "@/lib/placeholder-images";
@@ -107,40 +108,124 @@ export default function HomePage() {
     <div className="min-h-screen bg-canvas">
       <StorefrontHeader />
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8">
         <HeroBanner />
+
+        <section aria-label="Shopping benefits" className="grid border-b border-hairline py-7 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { icon: Sparkles, title: "Considered selection", copy: "Quality pieces, thoughtfully chosen" },
+            { icon: PackageCheck, title: "Order history", copy: "Keep purchases and details in one place" },
+            { icon: ShieldCheck, title: "Secure account", copy: "Private email-based account setup" },
+            { icon: House, title: "Browse by room", copy: "Focused collections for easier decisions" },
+          ].map(({ icon: Icon, title, copy }, index) => (
+            <div
+              key={title}
+              className={`flex items-center gap-3 px-3 py-3 ${index > 0 ? "lg:border-l lg:border-hairline" : ""}`}
+            >
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-accent-soft text-brand-accent">
+                <Icon size={18} strokeWidth={1.8} />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-ink">{title}</h2>
+                <p className="mt-0.5 text-xs text-muted">{copy}</p>
+              </div>
+            </div>
+          ))}
+        </section>
 
         {/* Above the generic rails: someone who's been here before is most likely to be
             coming back to something specific. Renders nothing on a first visit. */}
-        <ProductRail title="Recently viewed" items={toRailItems(recentlyViewed, recentPlaceholders)} />
+        <ProductRail
+          eyebrow="Continue exploring"
+          title="Recently viewed"
+          description="Pick up where you left off."
+          items={toRailItems(recentlyViewed, recentPlaceholders)}
+        />
 
-        <ProductRail title="Popular Chairs" viewAllHref="/products" items={toRailItems(popularChairs, popularPlaceholders)} loading={loadingRails} />
+        <ProductRail
+          eyebrow="Customer favourites"
+          title="Popular chairs"
+          description="Comfort-led seating selected for dining, working, and unwinding."
+          viewAllHref="/products"
+          items={toRailItems(popularChairs, popularPlaceholders)}
+          loading={loadingRails}
+        />
 
-        <ProductRail title="Products on Sale" viewAllHref="/products" items={toRailItems(onSale, salePlaceholders)} loading={loadingRails} />
+        <ProductRail
+          eyebrow="Limited opportunities"
+          title="Exceptional pieces, considered prices"
+          description="Selected designs available at a reduced price while stock lasts."
+          viewAllHref="/products"
+          items={toRailItems(onSale, salePlaceholders)}
+          loading={loadingRails}
+        />
 
         {topCategories.length > 0 && (
-          <section className="rounded-2xl bg-gradient-to-br from-brand-accent-soft via-surface-soft to-brand-accent-soft px-6 py-10 sm:px-10">
-            <h2 className="font-display text-center text-[28px] text-ink">Pick your Category</h2>
-            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <section className="my-8 rounded-lg bg-surface-dark px-5 py-10 text-on-dark sm:px-8 sm:py-14 lg:px-12">
+            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">Shop by room</p>
+                <h2 className="mt-3 font-display text-3xl text-on-dark sm:text-4xl">Find your starting point</h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-on-dark/60">
+                  Explore focused collections created around the way each room needs to work and feel.
+                </p>
+              </div>
+              <Link
+                to="/products"
+                className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-on-dark transition-colors hover:text-brand-accent"
+              >
+                Browse every product <ArrowRight size={14} />
+              </Link>
+            </div>
+            <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
               {topCategories.slice(0, 4).map((category, i) => (
                 <Link
                   key={itemId(category)}
                   to={`/products?category=${itemId(category)}`}
-                  className="group overflow-hidden rounded-xl bg-canvas shadow-[var(--shadow-card)]"
+                  className="group relative overflow-hidden rounded-md border border-white/10 bg-white/[0.04]"
                 >
                   <div className="aspect-[4/5] overflow-hidden">
                     <img
                       src={categoryPlaceholders[i]}
                       alt={category.Name as string}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                     />
                   </div>
-                  <p className="px-3 py-2.5 text-center text-sm font-medium text-ink">{category.Name as string}</p>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-4 pb-4 pt-14">
+                    <p className="text-sm font-semibold text-white sm:text-base">{category.Name as string}</p>
+                    <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/65 transition-colors group-hover:text-white">
+                      Explore collection <ArrowRight size={12} />
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
           </section>
         )}
+
+        <section className="my-16 grid overflow-hidden rounded-lg border border-hairline bg-surface shadow-[var(--shadow-card)] lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-14 lg:py-16">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">The Cartio approach</p>
+            <h2 className="mt-4 max-w-lg font-display text-3xl leading-tight text-ink sm:text-4xl">
+              Less noise. Better choices for every room.
+            </h2>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-steel">
+              We bring material, proportion, and everyday function into one considered edit—so creating a cohesive home feels simpler.
+            </p>
+            <Link
+              to="/products"
+              className="mt-7 inline-flex w-fit items-center gap-2 text-sm font-semibold text-ink transition-colors hover:text-brand-accent"
+            >
+              Explore the full collection <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="relative min-h-72 overflow-hidden bg-[linear-gradient(135deg,var(--color-surface-soft),var(--color-brand-accent-soft))] lg:min-h-[390px]">
+            <div className="absolute -right-8 -top-12 h-60 w-60 rounded-full bg-brand-accent/85" />
+            <div className="absolute bottom-[-12%] left-[12%] h-[72%] w-[56%] rounded-t-full bg-sage" />
+            <div className="absolute bottom-[12%] right-[9%] h-[42%] w-[42%] rounded-md bg-surface-dark/90 shadow-2xl" />
+            <div className="absolute left-[10%] top-[12%] h-28 w-28 rounded-full border-[18px] border-canvas/80" />
+          </div>
+        </section>
       </main>
 
       <StorefrontFooter />

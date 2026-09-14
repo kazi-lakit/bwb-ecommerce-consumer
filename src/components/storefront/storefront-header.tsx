@@ -62,7 +62,7 @@ export function StorefrontHeader() {
               {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
             <Link to="/" aria-label="Cartio home" className="flex items-center">
-              <CartioAnimatedLogo />
+              <CartioAnimatedLogo animated={location.pathname === "/"} />
             </Link>
           </div>
 
