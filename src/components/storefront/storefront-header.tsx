@@ -9,6 +9,7 @@ import { useWishlist } from "@/components/providers/wishlist-provider";
 import { startLogin } from "@/lib/blocks/auth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { CartioAnimatedLogo } from "@/components/storefront/cartio-animated-logo";
 
 const FALLBACK_CATEGORIES = ["Chair", "Table", "Sofa", "Dining", "Bed", "Interior"];
 
@@ -61,11 +62,7 @@ export function StorefrontHeader() {
               {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
             <Link to="/" aria-label="Cartio home" className="flex items-center">
-              <img
-                src="/cartio-logo.png"
-                alt="Cartio"
-                className="h-10 w-auto rounded-sm bg-[#f7fafc] px-1.5 py-1"
-              />
+              <CartioAnimatedLogo />
             </Link>
           </div>
 

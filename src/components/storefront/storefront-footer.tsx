@@ -23,7 +23,11 @@ export function StorefrontFooter() {
       <div className="mx-auto grid grid-cols-2 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-5">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2">
-            <img src="/favicon.png" alt="" className="h-8 w-8 rounded-sm" />
+            <svg viewBox="0 0 173 173" aria-hidden="true" className="h-8 w-8 flex-none overflow-visible">
+              <use href="/cartio-logo.svg#cartio-icon-upper" fill="var(--color-on-dark)" />
+              <use href="/cartio-logo.svg#cartio-icon-lower" fill="var(--color-on-dark)" />
+              <use href="/cartio-logo.svg#cartio-icon-dot" fill="var(--color-brand-accent)" />
+            </svg>
             <span className="font-display text-lg text-on-dark">Cartio</span>
           </div>
           <p className="mt-3 text-sm text-on-dark/70">Decorate your Space with Us</p>
