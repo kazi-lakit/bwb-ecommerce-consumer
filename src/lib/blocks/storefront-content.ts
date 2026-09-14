@@ -1,7 +1,9 @@
 import { blocksClient } from "./client";
 import { blocksDataCall } from "./http";
 
-export const STOREFRONT_CONTENT_LIVE = import.meta.env.VITE_STOREFRONT_CONTENT_LIVE === "true";
+// StorefrontHero is now a live part of the Cartio data model. Only an explicit false
+// disables it, so deployments that omit the optional flag still receive managed content.
+export const STOREFRONT_CONTENT_LIVE = import.meta.env.VITE_STOREFRONT_CONTENT_LIVE !== "false";
 export const HOME_HERO_KEY = "home-primary";
 
 export interface StorefrontHeroContent {
