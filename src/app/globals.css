@@ -16,6 +16,7 @@
  * warm-light palette; "dark" here is a reasoned inversion (canvas <-> near-black) so
  * the existing toggle keeps working rather than being ripped out.
  */
+
 :root {
   color-scheme: light;
 
